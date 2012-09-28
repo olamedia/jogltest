@@ -32,7 +32,7 @@ public class GameClient extends ConnectionStateListener implements IPacketListen
 	private WorldProvider worldProvider;
 	private GameScene scene;
 
-	private Client client = new Client(70 * 1024 * 1024, 70 * 1024 * 1024);
+	private Client client = new Client(10 * 1024 * 1024, 10 * 1024 * 1024);
 	private String hostname = "127.0.0.1";
 
 	@Override

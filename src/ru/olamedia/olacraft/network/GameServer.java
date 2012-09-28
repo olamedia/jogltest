@@ -33,7 +33,7 @@ public class GameServer {
 	private WorldProvider worldProvider;
 	
 	private ExecutorService threadPool = Executors.newFixedThreadPool(1);
-	public static Server server = new Server(70 * 1024 * 1024, 1024 * 1024) {
+	public static Server server = new Server(10 * 1024 * 1024, 1024 * 1024) {
 		@Override
 		protected PlayerConnection newConnection() {
 			// By providing our own connection implementation, we can store per
