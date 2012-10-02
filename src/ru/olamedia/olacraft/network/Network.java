@@ -2,6 +2,9 @@ package ru.olamedia.olacraft.network;
 
 import java.util.BitSet;
 
+import org.objenesis.strategy.SerializingInstantiatorStrategy;
+
+import ru.olamedia.math.OpenBitSet;
 import ru.olamedia.olacraft.network.packet.ChunkDataPacket;
 import ru.olamedia.olacraft.network.packet.ConnectionPacket;
 import ru.olamedia.olacraft.network.packet.ConnectionRequestPacket;
@@ -26,7 +29,14 @@ import ru.olamedia.olacraft.world.location.SectorLocation;
 import com.esotericsoftware.kryo.Kryo;
 
 public class Network {
+	private static boolean isRegistered = false;
+
 	public static void registerPackets(Kryo kryo) {
+		if (isRegistered) {
+			// return;
+		}
+		isRegistered = true;
+		//kryo.setInstantiatorStrategy(new SerializingInstantiatorStrategy());
 		// types
 		kryo.register(boolean.class);
 		kryo.register(boolean[].class);
@@ -39,7 +49,7 @@ public class Network {
 		kryo.register(float[].class);
 		kryo.register(long.class);
 		kryo.register(long[].class);
-		kryo.register(BitSet.class);
+		kryo.register(OpenBitSet.class);
 		kryo.register(HeightMap.class);
 		kryo.register(WorldInfo.class);
 		kryo.register(WorldInfoPacket.class);
@@ -55,17 +65,11 @@ public class Network {
 		kryo.register(RegionData.class);
 		kryo.register(GetRegionPacket.class);
 		kryo.register(RegionDataPacket.class);
-		
-		
-		kryo.register(ChunkLightData.class);
-		kryo.register(ChunkData.class);
-		// packets
 		kryo.register(ConnectionRequestPacket.class);
 		kryo.register(ConnectionPacket.class);
 		kryo.register(SpawnRequestPacket.class);
 		kryo.register(SpawnPacket.class);
-		kryo.register(GetChunkDataPacket.class);
-		kryo.register(ChunkDataPacket.class);
 		kryo.register(LiveEntityLocationUpdatePacket.class);
+		// packets
 	}
 }

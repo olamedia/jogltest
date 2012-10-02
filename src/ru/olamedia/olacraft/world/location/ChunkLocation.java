@@ -32,9 +32,14 @@ public class ChunkLocation implements Serializable {
 	public String toString() {
 		return "chunkLocation[" + x + "," + y + "," + z + "]";
 	}
+
 	/*
 	 * public BlockSlice getSlice(){
 	 * 
 	 * }
 	 */
+
+	public BlockLocation getBlockLocation() {
+		return new BlockLocation(Chunk.rev(x), Chunk.rev(y) - 128, Chunk.rev(z));
+	}
 }

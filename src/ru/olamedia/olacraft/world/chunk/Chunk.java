@@ -37,6 +37,24 @@ public class Chunk extends BlockSlice {
 	}
 
 	/**
+	 * Convert chunk coordinate into block coordinate (back left bottom)
+	 * 
+	 * @param v
+	 *            block coordinate along one axis
+	 * @return
+	 */
+	public static int rev(int v) {
+		return v * 16; // -32..-17 -16..-1 0..15 16..31 32..
+		/*
+		 * if (v >= 0) {
+		 * return v * 16;
+		 * } else {
+		 * return (v + 1) * 16 - 1;
+		 * }
+		 */
+	}
+
+	/**
 	 * Convert block coordinate into block position inside of chunk
 	 * 
 	 * @param v
@@ -78,11 +96,11 @@ public class Chunk extends BlockSlice {
 		if (isMeshCostructed) {
 			return mesh;
 		}
-		if (getY() > provider.getInfo().maxHeight) {
+		if (offset.y > provider.getInfo().maxHeight) {
 			isMeshCostructed = true;
 			return null;
 		}
-		if (getY() < provider.getInfo().minHeight) {
+		if (offset.y < provider.getInfo().minHeight) {
 			isMeshCostructed = true;
 			return null;
 		}
@@ -95,9 +113,9 @@ public class Chunk extends BlockSlice {
 			// gl.glHint(GL2.GL_PERSPECTIVE_CORRECTION_HINT, GL2.GL_FASTEST);
 			// gl.glHint(GL2.GL_LINE_SMOOTH_HINT, GL2.GL_NICEST);
 			GrassBlockType grass = new GrassBlockType();
-			for (int x = getX(); x < getX() + getWidth(); x++) {
-				for (int y = getY(); y < getY() + getHeight(); y++) {
-					for (int z = getZ(); z < getZ() + getDepth(); z++) {
+			for (int x = offset.x; x < offset.x + getWidth(); x++) {
+				for (int y = offset.y; y < offset.y + getHeight(); y++) {
+					for (int z = offset.z; z < offset.z + getDepth(); z++) {
 						//
 
 						if (!isEmptyBlock(x, y, z)) {
@@ -168,6 +186,9 @@ public class Chunk extends BlockSlice {
 								mesh.addFrontQuad();
 								visibleFront++;
 							}
+							// System.out.println("mesh not empty");
+						} else {
+							// System.out.println("mesh empty");
 						}
 					}
 				}
@@ -193,7 +214,7 @@ public class Chunk extends BlockSlice {
 	}
 
 	private BlockLocation getBlockLocation() {
-		return new BlockLocation(getX(), getY(), getZ());
+		return offset;
 	}
 
 	public boolean isAvailable() {
@@ -201,9 +222,9 @@ public class Chunk extends BlockSlice {
 	}
 
 	public boolean isNeighborsAvailable() {
-		int x = Chunk.v(getX());
-		int y = Chunk.v(getY());
-		int z = Chunk.v(getZ());
+		int x = offset.getChunkLocation().x;
+		int y = offset.getChunkLocation().y;
+		int z = offset.getChunkLocation().z;
 		return provider.isChunkAvailable(new ChunkLocation(x - 1, y, z))
 				&& provider.isChunkAvailable(new ChunkLocation(x + 1, y, z))
 				&& provider.isChunkAvailable(new ChunkLocation(x, y - 1, z))
@@ -213,9 +234,9 @@ public class Chunk extends BlockSlice {
 	}
 
 	public void requestNeighbors() {
-		int x = Chunk.v(getX());
-		int y = Chunk.v(getY());
-		int z = Chunk.v(getZ());
+		int x = offset.getChunkLocation().x;
+		int y = offset.getChunkLocation().y;
+		int z = offset.getChunkLocation().z;
 		if (!provider.isChunkAvailable(new ChunkLocation(x - 1, y, z))) {
 			provider.loadChunk(new ChunkLocation(x - 1, y, z));
 		}
@@ -237,11 +258,7 @@ public class Chunk extends BlockSlice {
 	}
 
 	public void request() {
-		BlockLocation blockLocation = new BlockLocation(getX(), getY(), getZ());
-		// System.out.println("provider.requestChunk(" +
-		// blockLocation.getRegionLocation() + blockLocation.getChunkLocation()
-		// + ")");
-		provider.loadChunk(blockLocation.getChunkLocation());
+		provider.loadChunk(offset.getChunkLocation());
 	}
 
 	// public BlockType getBlockType(int x, int y, int z) {
@@ -286,5 +303,9 @@ public class Chunk extends BlockSlice {
 
 	public WorldProvider getProvider() {
 		return provider;
+	}
+
+	public void setLocation(ChunkLocation location) {
+		setLocation(location.getBlockLocation().x, location.getBlockLocation().y, location.getBlockLocation().z);
 	}
 }

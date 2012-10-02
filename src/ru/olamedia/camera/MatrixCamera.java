@@ -13,8 +13,6 @@ import static org.openmali.FastMath.*;
 import ru.olamedia.olacraft.game.Game;
 import ru.olamedia.input.Keyboard;
 import ru.olamedia.math.Frustum;
-import ru.olamedia.olacraft.render.jogl.PlaneRenderer;
-import ru.olamedia.olacraft.render.jogl.VectorRenderer;
 
 import com.jogamp.newt.event.KeyEvent;
 
@@ -161,16 +159,16 @@ public class MatrixCamera {
 		loadProjectionMatrix(drawable);
 		loadViewMatrix(drawable);
 
-		gl.glColor3f(1, 0, 0);
-		PlaneRenderer.render(frustum.leftPlane, drawable);
-		gl.glColor3f(1, 1, 0);
-		PlaneRenderer.render(frustum.rightPlane, drawable);
-		gl.glColor3f(1, 0, 1);
-		PlaneRenderer.render(frustum.topPlane, drawable);
-		gl.glColor3f(1, 1, 1);
-		PlaneRenderer.render(frustum.bottomPlane, drawable);
+		// gl.glColor3f(1, 0, 0);
+		// PlaneRenderer.render(frustum.leftPlane, drawable);
+		// gl.glColor3f(1, 1, 0);
+		// PlaneRenderer.render(frustum.rightPlane, drawable);
+		// gl.glColor3f(1, 0, 1);
+		// PlaneRenderer.render(frustum.topPlane, drawable);
+		// gl.glColor3f(1, 1, 1);
+		// PlaneRenderer.render(frustum.bottomPlane, drawable);
 
-		VectorRenderer.render(nearc, frustum.leftPlane.n, drawable);
+		// VectorRenderer.render(nearc, frustum.leftPlane.n, drawable);
 	}
 
 	private void loadViewMatrix(GLAutoDrawable drawable) {

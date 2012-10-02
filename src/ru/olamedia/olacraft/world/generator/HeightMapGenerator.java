@@ -77,6 +77,7 @@ public class HeightMapGenerator {
 			maxTerrain = new Max(plains, turbulence);
 			finalTerrain = new ScaleBias(maxTerrain);
 			finalTerrain.setBias(2);
+			finalTerrain.setScale(0.4);
 			setSeed(seed);
 		} catch (ExceptionInvalidParam e) {
 			e.printStackTrace();
@@ -117,7 +118,7 @@ public class HeightMapGenerator {
 			for (int x = 0; x < 16; x++) {
 				for (int z = 0; z < 16; z++) {
 					// System.out.print(((float) heights[x][z]) + ";");
-					ints[x][z] = (int) (minValue + (maxValue - minValue) * (heights[x][z] + 1) / 2);
+					ints[x][z] = (int) (50 + minValue + (maxValue - minValue) * (heights[x][z] + 1) / 2);
 				}
 			}
 			// System.out.println("");
@@ -137,15 +138,17 @@ public class HeightMapGenerator {
 			builder.setSourceModule(finalTerrain);
 			builder.setDestNoiseMap(heightMap);
 			builder.setDestSize(256, 256);
-			float bx = location.x;
-			float bz = location.z;
-			builder.setBounds(bx, bx + 1, bz, bz + 1);
+			float bx = location.getBlockLocation().x;
+			float bz = location.getBlockLocation().z;
+			float cx = location.getChunkLocation().x;
+			float cz = location.getChunkLocation().z;
+			builder.setBounds(cx, cx + 16, cz, cz + 16);
 			builder.build();
 			double[][] heights = heightMap.getNoiseMap();
 			for (int x = 0; x < 256; x++) {
 				for (int z = 0; z < 256; z++) {
-					map.setHeight(x, z, 0);
-					//(int) (minValue + (maxValue - minValue) * (heights[x][z] + 1) / 2)
+					// map.setHeight(x, z, 0);
+					map.setHeight(x, z, (int) (minValue + ((1 + heights[x][z]) / 2) * (maxValue - minValue)));
 				}
 			}
 			return map;

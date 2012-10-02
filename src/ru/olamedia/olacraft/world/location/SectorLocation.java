@@ -23,6 +23,14 @@ public class SectorLocation implements Serializable {
 		return new RegionLocation(Chunk.v(x), Chunk.v(z));
 	}
 
+	public ChunkLocation getChunkLocation() {
+		return new ChunkLocation(Chunk.rev(x), 0, Chunk.rev(z));
+	}
+
+	public BlockLocation getBlockLocation() {
+		return new BlockLocation(Chunk.rev(Chunk.rev(x)), 0, Chunk.rev(Chunk.rev(z)));
+	}
+
 	public String toString() {
 		return "sectorLocation[" + x + "," + z + "]";
 	}

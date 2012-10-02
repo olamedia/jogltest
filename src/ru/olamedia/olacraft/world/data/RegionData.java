@@ -24,6 +24,10 @@ public class RegionData implements Serializable {
 	public HeightMap heightMap = new HeightMap(256, 256);
 	public SectorData[][] sectorData = new SectorData[16][16];
 
+	public RegionData(){
+		
+	}
+	
 	public void writeTo(OutputStream stream) throws IOException {
 		ObjectOutputStream out = new ObjectOutputStream(stream);
 		out.writeObject(this);

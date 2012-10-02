@@ -45,9 +45,7 @@ public class WorldProvider {
 			spawnLocation.y = y;
 			System.out.print(y + ". ");
 			ChunkData chunk = dataProvider.getChunk(spawnLocation.getChunkLocation());
-			boolean notEmpty = !chunk.isEmpty(ChunkData.getId(Chunk.in(spawnLocation.x), Chunk.in(spawnLocation.y),
-					Chunk.in(spawnLocation.z)));
-			if (notEmpty) {
+			if (!chunk.isEmpty(spawnLocation)) {
 				// found
 				l.y = y + 1;
 				System.out.println("found: " + y);
@@ -65,6 +63,9 @@ public class WorldProvider {
 	}
 
 	public boolean renderTop(int x, int y, int z) {
+		// System.out.println("Check render top " + y + "[" + x + " " + y + " "
+		// + z + "]" + !isEmptyBlock(x, y, z)
+		// + " && " + isEmptyBlock(x, y + 1, z));
 		return (!isEmptyBlock(x, y, z)) && (isEmptyBlock(x, y + 1, z));
 	}
 
@@ -91,9 +92,14 @@ public class WorldProvider {
 			ChunkData data = dataProvider.getChunk(blockLocation.getChunkLocation());
 			if (null != data) {
 				return data.isEmpty(blockLocation);
+			} else {
+				// System.out.println("chunk null " + x + " " + y + " " + z);
 			}
+		} else {
+			// System.out.println("chunk not available " + x + " " + y + " " +
+			// z);
 		}
-		return false;
+		return true;
 	}
 
 	public void requestChunk(int chunkX, int chunkY, int chunkZ) {

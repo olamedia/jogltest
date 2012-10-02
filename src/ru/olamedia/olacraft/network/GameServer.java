@@ -31,7 +31,7 @@ import com.esotericsoftware.kryonet.Server;
 
 public class GameServer {
 	private WorldProvider worldProvider;
-	
+
 	private ExecutorService threadPool = Executors.newFixedThreadPool(1);
 	public static Server server = new Server(10 * 1024 * 1024, 1024 * 1024) {
 		@Override
@@ -56,7 +56,10 @@ public class GameServer {
 	public GameServer() {
 		// INIT WORLD
 		worldProvider = new WorldProvider();
-		worldProvider.setChunkDataProvider(new CachedChunkDataProvider(new LocalChunkDataProvider(worldProvider.getInfo().name)));
+		// worldProvider.setChunkDataProvider(new
+		// LocalChunkDataProvider(worldProvider.getInfo().name));
+		worldProvider.setChunkDataProvider(new CachedChunkDataProvider(new LocalChunkDataProvider(worldProvider
+				.getInfo().name)));
 		// CREATE SCENE
 		scene = new GameScene(worldProvider);
 		// worldProvider.getInfo().name = "world";
@@ -78,8 +81,7 @@ public class GameServer {
 				if (object instanceof GetRegionPacket) {
 					GetRegionPacket p = (GetRegionPacket) object;
 					RegionData data = worldProvider.getRegion(p.location);
-					RegionDataPacket response = new RegionDataPacket();
-					response.data = data;
+					RegionDataPacket response = new RegionDataPacket(data);
 					server.sendToTCP(connection.getID(), response);
 				}
 				if (object instanceof SpawnRequestPacket) {

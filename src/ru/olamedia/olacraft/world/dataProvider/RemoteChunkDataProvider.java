@@ -36,8 +36,8 @@ public class RemoteChunkDataProvider extends AbstractChunkDataProvider implement
 	@Override
 	public void loadRegion(RegionLocation regionLocation) {
 		String key = regionLocation.toString();
-		debug("loadRegion(" + key + ")");
 		if (!loading.contains(key)) {
+			debug("loadRegion(" + key + ")");
 			loading.add(key);
 			client.send(new GetRegionPacket(regionLocation));
 			debug("sent packet: GetRegionPacket");
@@ -64,8 +64,9 @@ public class RemoteChunkDataProvider extends AbstractChunkDataProvider implement
 	@Override
 	public void onPacket(Connection connection, IPacket p) {
 		if (p instanceof RegionDataPacket) {
-			debug("received packet [conn " + connection.getID() + "]: ChunkDataPacket");
+			debug("received packet [conn " + connection.getID() + "]: RegionDataPacket");
 			RegionData data = ((RegionDataPacket) p).data;
+			System.out.println(data.sectorData[0][0].chunkData[15].isEmpty(0) + "");
 			String key = data.location.toString();
 			map.put(key, data);
 			loading.remove(key);

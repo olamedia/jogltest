@@ -27,12 +27,8 @@ public class CachedChunkDataProvider extends AbstractChunkDataProvider {
 	@Override
 	public boolean isRegionAvailable(RegionLocation regionLocation) {
 		String key = regionLocation.toString();// regionLocation.x + "-" +
-		// regionLocation.z;
 		if (regionMap.containsKey(key)) {
 			return true;
-		}
-		if (loading.contains(key)) {
-			// return false;
 		}
 		return provider.isRegionAvailable(regionLocation);
 	}
@@ -40,16 +36,10 @@ public class CachedChunkDataProvider extends AbstractChunkDataProvider {
 	@Override
 	public void loadRegion(RegionLocation regionLocation) {
 		String key = regionLocation.toString();
-		//debug("loadRegion(" + regionLocation + ")");
+		// debug("loadRegion(" + regionLocation + ")");
 		if (!regionMap.containsKey(key)) {
-			if (!loading.contains(key)) {
-				debug("load()");
-				loading.add(key);
-				provider.loadRegion(regionLocation);
-			}else{
-				//debug("loadRegion(" + regionLocation + ") already in loading");
-			}
-		}else{
+			provider.loadRegion(regionLocation);
+		} else {
 			debug("error: loadRegion(" + regionLocation + ") already in regionMap");
 		}
 	}
@@ -62,7 +52,6 @@ public class CachedChunkDataProvider extends AbstractChunkDataProvider {
 		} else {
 			RegionData data = provider.getRegion(regionLocation);
 			regionMap.put(key, data);
-			loading.remove(key);
 			return data;
 		}
 	}

@@ -19,6 +19,9 @@ public class PlaneRenderer {
 	}
 
 	public static void render(Plane p, GLAutoDrawable drawable) {
+		if (true){
+			return;
+		}
 		GL2 gl = drawable.getGL().getGL2();
 		float size = 100;
 		float step = size / 5;

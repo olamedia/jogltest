@@ -25,6 +25,7 @@ import ru.olamedia.olacraft.weapon.BulletScene;
 import ru.olamedia.olacraft.world.blockTypes.AbstractBlockType;
 import ru.olamedia.olacraft.world.blockTypes.GrassBlockType;
 import ru.olamedia.olacraft.world.chunk.BlockSlice;
+import ru.olamedia.olacraft.world.chunk.ChunkSlice;
 import ru.olamedia.olacraft.world.provider.WorldProvider;
 import ru.olamedia.player.Player;
 import ru.olamedia.vbo.VBO;
@@ -97,7 +98,7 @@ public class GameScene {
 	 */
 	public void setRenderDistance(int renderDistance) {
 		this.renderDistance = renderDistance;
-		viewSlice = new BlockSlice(provider, renderDistance, renderDistance * 2, renderDistance);
+		viewSlice = new BlockSlice(provider, renderDistance, renderDistance, renderDistance);
 		blockRenderer = new ChunkRenderer(viewSlice);
 	}
 
@@ -152,10 +153,12 @@ public class GameScene {
 		gl.glClearColor(49f / 255f, 119f / 255f, 243f / 255f, 1);
 		// GOING 3D
 		gl.glPushMatrix();
+		gl.glPushAttrib(GL2.GL_ALL_ATTRIB_BITS);
 		Game.instance.camera.setUp(drawable);
 		viewSlice.setCenter((int) Game.instance.camera.getX(), (int) Game.instance.camera.getY(),
 				(int) Game.instance.camera.getZ());
 		// RENDER BLOCKS
+		gl.glPopAttrib();
 		gl.glPushAttrib(GL2.GL_ALL_ATTRIB_BITS);
 		gl.glColor4f(0f, 1f, 0, 1);
 		gl.glEnable(GL2.GL_DEPTH_TEST);
@@ -180,6 +183,7 @@ public class GameScene {
 		for (LiveEntity entity : liveEntities.values()) {
 			gl.glPushMatrix();
 			gl.glTranslatef(entity.getX(), entity.getCameraY(), entity.getZ());
+			gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
 			glu.gluSphere(qobj0, 0.5f, 10, 10);
 			gl.glPopMatrix();
 		}
@@ -187,7 +191,7 @@ public class GameScene {
 		// bullets.render(drawable);
 		gl.glPopMatrix();
 
-		testObject.render();
+		// testObject.render();
 
 		// GOIND 2D
 		gl.glMatrixMode(GL2.GL_PROJECTION);
@@ -227,7 +231,7 @@ public class GameScene {
 
 		// inventoryprivate PMVMatrix matrix;
 		if (null != inventoryRenderer) {
-			inventoryRenderer.render(drawable);
+			// inventoryRenderer.render(drawable);
 		}
 
 		viewport.drawText("avg fps: " + (int) Game.timer.getAvgFps(), 10, height - 20);
@@ -244,9 +248,21 @@ public class GameScene {
 		viewport.drawText("inAir: " + Game.instance.player.inAir(), width - msz - 10, height - msz - 110);
 		viewport.drawText("rdistance: " + renderDistance, width - msz - 10, height - msz - 155);
 
-		viewport.drawText("cam x: " + Game.instance.camera.getX(), width - msz - 10, height - msz - 170);
+		ChunkSlice cs = viewSlice.getChunkSlice();
+		viewport.drawText("slice x: " + cs.getX() + ".." + (cs.getX() + cs.getWidth() - 1) + " y: " + cs.getY() + ".."
+				+ (cs.getY() + cs.getHeight() - 1) + " z: " + cs.getZ() + ".." + (cs.getZ() + cs.getDepth() - 1), width
+				- msz * 2 - 10, height - msz - 170);
+		// viewport.drawText("slice x: " + (cs.getX() + cs.getWidth() - 1) +
+		// " y: " + (cs.getY() + cs.getHeight() - 1)
+		// + " z: " + (cs.getY() + cs.getDepth() - 1), width - msz * 2 - 10,
+		// height - msz - 185);
+
 		gl.glPopAttrib();
 		gl.glPopMatrix();
 		gl.glFlush();
+	}
+
+	public Player getPlayer() {
+		return player;
 	}
 }

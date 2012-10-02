@@ -2,13 +2,12 @@ package ru.olamedia.olacraft.world.chunk;
 
 import java.util.HashMap;
 
+import ru.olamedia.olacraft.world.location.ChunkLocation;
 import ru.olamedia.olacraft.world.provider.WorldProvider;
 
 public class ChunkSlice {
 	private WorldProvider provider;
-	private int leftX;
-	private int bottomY;
-	private int backZ;
+	private ChunkLocation offset;
 	private int width;
 	private int height;
 	private int depth;
@@ -18,17 +17,21 @@ public class ChunkSlice {
 		this.width = width;
 		this.height = height;
 		this.depth = depth;
+		offset = new ChunkLocation();
 	}
 
 	protected HashMap<String, Chunk> chunks = new HashMap<String, Chunk>();
 
-	public Chunk getChunk(int x, int y, int z) {
+	public Chunk getChunk(ChunkLocation location) {
+		int x = location.x;
+		int y = location.y;
+		int z = location.z;
 		String key = x + ";" + y + ";" + z;
 		if (chunks.containsKey(key)) {
 			return chunks.get(key);
 		} else {
 			Chunk chunk = new Chunk(provider);
-			chunk.setLocation(x * 16, y * 16, z * 16);
+			chunk.setLocation(location);
 			chunks.put(key, chunk);
 			return chunk;
 		}
@@ -79,36 +82,33 @@ public class ChunkSlice {
 		this.depth = depth;
 	}
 
-	public void setLocation(int x, int y, int z) {
-		leftX = x;
-		bottomY = y;
-		backZ = z;
-	}
-
 	public void setCenter(int x, int y, int z) {
-		leftX = x - width / 2;
-		bottomY = y - height / 2;
-		backZ = z - depth / 2;
+		offset.x = x - width / 2;
+		offset.y = y - height / 2;
+		offset.z = z - depth / 2;
 	}
 
 	/**
 	 * @return the leftX
 	 */
 	public int getX() {
-		return leftX;
+		return offset.x;
 	}
 
 	/**
 	 * @return the bottomY
 	 */
 	public int getY() {
-		return bottomY;
+		return offset.y;
 	}
 
 	/**
 	 * @return the backZ
 	 */
 	public int getZ() {
-		return backZ;
+		return offset.z;
+	}
+	public void setLocation(ChunkLocation chunkOffset) {
+		offset = chunkOffset;
 	}
 }

@@ -7,8 +7,10 @@ import java.util.HashMap;
 
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
+import javax.media.opengl.GL2ES1;
 import javax.media.opengl.GL2ES2;
 import javax.media.opengl.GLAutoDrawable;
+import javax.media.opengl.GLContext;
 import javax.media.opengl.fixedfunc.GLPointerFunc;
 
 import com.jogamp.opengl.util.GLArrayDataServer;
@@ -240,50 +242,39 @@ public class Mesh {
 
 	}
 
-	public void joglRender(GL glx) {
+	public void joglRender() {
 		if (vertexCount < 1) {
 			return;
 		}
-		GL2 gl;
-		GL2ES2 es2;
-		gl = glx.getGL2();
-		if (useDisplayList) {
-			gl.glEnable(GL2.GL_CULL_FACE);
-			gl.glEnable(GL2.GL_DEPTH_TEST);
-		}
-		if (wireframe) {
-			// Set wireframe mode
-			gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL2.GL_LINE);
-		} else {
-			gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL2.GL_FILL);
-		}
-
+		GL glx = GLContext.getCurrentGL();
 		if (useVbo) {
-			// es2 = glx.getGL2ES2();
-			// gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, data);
-
-			// gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, 0);
-			// gl.glBindBuffer(GL2.GL_ELEMENT_ARRAY_BUFFER, 0);
+			//GL2ES2 gl = glx.getGL2ES2();
+			GL2 gl = glx.getGL2();
 			for (Integer m : materials.keySet()) {
-				//final GLArrayDataServer interleaved = arrays.get(m);
-				arrays.get(m).enableBuffer(gl, true);
 				gl.glEnable(GL.GL_TEXTURE_2D);
-				gl.glEnable(GL2.GL_CULL_FACE);
-				gl.glEnable(GL2.GL_DEPTH_TEST);
+				gl.glBindTexture(GL.GL_TEXTURE_2D, (int) m);
 				gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
 				gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST_MIPMAP_NEAREST);
-				gl.glBindTexture(GL.GL_TEXTURE_2D, (int) m);
+				arrays.get(m).enableBuffer(gl, true);
+				gl.glEnable(GL.GL_CULL_FACE);
+				gl.glEnable(GL.GL_DEPTH_TEST);
+				//gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL2.GL_FILL);
 				gl.glDrawArrays(GL2.GL_QUADS, 0, arrays.get(m).getElementCount());
 				arrays.get(m).enableBuffer(gl, false);
+				//System.exit(0);
 			}
-			/*
-			 * gl.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-			 * gl.glVertexPointer(3, GL2.GL_FLOAT, 10, buffer);
-			 * gl.glDrawArrays(GL2.GL_QUADS, 0, vertexCount);
-			 * gl.glDisableClientState(GL2.GL_VERTEX_ARRAY);
-			 */
-
 		} else {
+			GL2 gl = glx.getGL2();
+			if (useDisplayList) {
+				gl.glEnable(GL2.GL_CULL_FACE);
+				gl.glEnable(GL2.GL_DEPTH_TEST);
+			}
+			if (wireframe) {
+				// Set wireframe mode
+				gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL2.GL_LINE);
+			} else {
+				gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL2.GL_FILL);
+			}
 			if (useDisplayList) {
 				if (DL == null) {
 					DL = new DisplayList(glx);
@@ -342,5 +333,9 @@ public class Mesh {
 				DL.render();
 			}
 		}
+	}
+
+	public int getVertexCount() {
+		return vertexCount;
 	}
 }

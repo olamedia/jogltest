@@ -12,10 +12,14 @@ import java.io.Serializable;
 public class HeightMap implements Serializable {
 	private static final long serialVersionUID = -6777972159522169977L;
 	public byte[][] map; // -128..127
+	public int width;
+	public int height;
 	public HeightMap(){
 		
 	}
 	public HeightMap(int width, int height) {
+		this.width = width;
+		this.height = height;
 		map = new byte[width][height];
 	}
 

@@ -1,37 +1,20 @@
 package ru.olamedia.olacraft.world.chunk;
 
+import ru.olamedia.olacraft.world.location.BlockLocation;
+import ru.olamedia.olacraft.world.location.ChunkLocation;
 import ru.olamedia.olacraft.world.provider.WorldProvider;
 
 public class BlockSlice {
 	protected WorldProvider provider;
-	protected int leftX;
-	protected int bottomY;
-	protected int backZ;
+	protected BlockLocation offset;
 	protected int width;
 	protected int height;
 	protected int depth;
 
 	protected ChunkSlice chunkSlice;
 
-	// Memory leak:
-	//protected int[][] highest = new int[256][256];
-	
-	public void invalidateCache(){
-		//highest = new int[256][256];
+	public void invalidateCache() {
 	}
-	
-/*	public int getHighest(int blockX, int blockZ) {
-		if (highest[blockX - leftX][blockZ - backZ] > 0){
-			return highest[blockX - leftX][blockZ - backZ];
-		}
-		for (int y = 0; y < 128; y++) {
-			if (provider.isEmptyBlock(blockX, y, blockZ)){
-				highest[blockX - leftX][blockZ - backZ] = y; 
-				return y;
-			}
-		}
-		return 0;
-	}*/
 
 	/**
 	 * 
@@ -44,6 +27,7 @@ public class BlockSlice {
 	 *            (blocks)
 	 */
 	public BlockSlice(WorldProvider provider, int width, int height, int depth) {
+		offset = new BlockLocation();
 		this.provider = provider;
 		this.width = width;
 		this.height = height;
@@ -54,10 +38,8 @@ public class BlockSlice {
 		if (null == chunkSlice) {
 			chunkSlice = new ChunkSlice(provider, width / 16, height / 16, depth / 16);
 		}
-		int x = Chunk.v(leftX);
-		int y = Chunk.v(bottomY);
-		int z = Chunk.v(backZ);
-		chunkSlice.setLocation(x, y, z);
+		ChunkLocation chunkOffset = offset.getChunkLocation();
+		chunkSlice.setLocation(chunkOffset);
 		return chunkSlice;
 	}
 
@@ -120,12 +102,12 @@ public class BlockSlice {
 	 *            (blocks)
 	 */
 	public void setLocation(int x, int y, int z) {
-		if (x != leftX || y != bottomY || z != backZ){
+		if (x != offset.x || y != offset.y || z != offset.z) {
 			invalidateCache();
 		}
-		leftX = x;
-		bottomY = y;
-		backZ = z;
+		offset.x = x;
+		offset.y = y;
+		offset.z = z;
 	}
 
 	/**
@@ -142,23 +124,14 @@ public class BlockSlice {
 	}
 
 	/**
-	 * @return the left x (blocks)
+	 * @return offset
 	 */
-	public int getX() {
-		return leftX;
+	public BlockLocation getOffset() {
+		return offset;
 	}
 
-	/**
-	 * @return the bottom y (blocks)
-	 */
-	public int getY() {
-		return bottomY;
-	}
-
-	/**
-	 * @return the back z (blocks)
-	 */
-	public int getZ() {
-		return backZ;
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName() + "[" + offset + ";" + width + "x" + height + "x" + depth + "]";
 	}
 }
