@@ -13,16 +13,16 @@ public class GrassBlockType extends AbstractBlockType {
 
 	@Override
 	public String getStackTextureFile() {
-		return "texture/terrain-grassdarkgreen.png";
+		return "texture/terrain-grassolive.png";
 	}
 
 	@Override
 	public String getTopTextureFile() {
-		return "texture/terrain-grassdarkgreen.png";
+		return "texture/terrain-grassolive.png";
 	}
 
 	@Override
 	public String getFrontTextureFile() {
-		return "texture/terrain-glong-darkgreen-dirt.png";
+		return "texture/terrain-ledgeolive.png";
 	}
 }

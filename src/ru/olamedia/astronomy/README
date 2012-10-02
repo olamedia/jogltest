@@ -1,0 +1,19 @@
+	
+simple-astronomy-lib
+A simple astronomy Java library for calculating moon phase, solar eclipses, etc.
+
+http://code.google.com/p/simple-astronomy-lib/
+
+import java.util.Calendar;
+import java.util.TimeZone;
+import com.bradsbrain.simpleastronomy.MoonPhaseFinder;
+
+public class WerewolfCheck {
+    public static void main(String[] args) {
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("America/Chicago"));
+        cal.clear();
+        cal.set(2011, Calendar.JUNE, 12);
+
+        System.out.println("The next full moon is on: " + MoonPhaseFinder.findFullMoonFollowing(cal));
+    }
+}

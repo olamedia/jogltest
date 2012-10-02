@@ -14,6 +14,7 @@ import org.ode4j.ode.DBody;
 import com.jogamp.opengl.util.PMVMatrix;
 
 import ru.olamedia.Options;
+import ru.olamedia.game.GameTime;
 import ru.olamedia.liveEntity.LiveEntity;
 import ru.olamedia.olacraft.game.Game;
 import ru.olamedia.olacraft.physics.GamePhysicsWorld;
@@ -45,6 +46,7 @@ public class GameScene {
 
 	private boolean isInitialized = false;
 	BlockSlice viewSlice;
+	public GameTime time = new GameTime();
 
 	public GameScene(WorldProvider provider) {
 		this.provider = provider;
@@ -74,6 +76,7 @@ public class GameScene {
 			return;
 		}
 		isInitialized = true;
+		time.init();
 		registerTextures();
 		viewport = new joglViewport(drawable);
 		testObject = new VBO(drawable);
@@ -132,6 +135,7 @@ public class GameScene {
 	}
 
 	public void tick() {
+		time.tick();
 		Game.instance.tick();
 		float aspect = Game.Display.getAspect();
 		Game.instance.camera.setAspect(aspect);
@@ -148,9 +152,11 @@ public class GameScene {
 			return;
 		}
 		init(drawable);
+		float[] clearColor = time.getClearColor();
 		GL2 gl = drawable.getGL().getGL2();
 		gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
-		gl.glClearColor(49f / 255f, 119f / 255f, 243f / 255f, 1);
+		gl.glClearColor(clearColor[0], clearColor[1], clearColor[2], 1);
+		// gl.glClearColor(49f / 255f, 119f / 255f, 243f / 255f, 1);
 		// GOING 3D
 		gl.glPushMatrix();
 		gl.glPushAttrib(GL2.GL_ALL_ATTRIB_BITS);
@@ -252,10 +258,7 @@ public class GameScene {
 		viewport.drawText("slice x: " + cs.getX() + ".." + (cs.getX() + cs.getWidth() - 1) + " y: " + cs.getY() + ".."
 				+ (cs.getY() + cs.getHeight() - 1) + " z: " + cs.getZ() + ".." + (cs.getZ() + cs.getDepth() - 1), width
 				- msz * 2 - 10, height - msz - 170);
-		// viewport.drawText("slice x: " + (cs.getX() + cs.getWidth() - 1) +
-		// " y: " + (cs.getY() + cs.getHeight() - 1)
-		// + " z: " + (cs.getY() + cs.getDepth() - 1), width - msz * 2 - 10,
-		// height - msz - 185);
+		viewport.drawText("time: " + time.getDateTimeString(), width - msz * 2 - 10, height - msz - 185);
 
 		gl.glPopAttrib();
 		gl.glPopMatrix();

@@ -6,12 +6,12 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
 
 import ru.olamedia.olacraft.world.block.Block;
-import ru.olamedia.olacraft.world.provider.ChunkProvider;
+import ru.olamedia.olacraft.world.provider.WorldProvider;
 
 public class joglBlockPicker {
-	ChunkProvider provider;
+	WorldProvider provider;
 
-	public void setChunkProvider(ChunkProvider provider) {
+	public joglBlockPicker(WorldProvider provider) {
 		this.provider = provider;
 	}
 
