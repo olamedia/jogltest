@@ -1,22 +1,30 @@
 package ru.olamedia.camera;
 
+import java.nio.FloatBuffer;
+
 import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
+import javax.media.opengl.GLContext;
+import javax.media.opengl.GLUniformData;
+import javax.media.opengl.fixedfunc.GLMatrixFunc;
 import javax.media.opengl.glu.GLU;
 import javax.vecmath.Vector3f;
-import javax.vecmath.Matrix4f;
 
 import org.openmali.FastMath;
-
-import static org.openmali.FastMath.*;
 
 import ru.olamedia.olacraft.game.Game;
 import ru.olamedia.input.Keyboard;
 import ru.olamedia.math.Frustum;
 
 import com.jogamp.newt.event.KeyEvent;
+import com.jogamp.opengl.util.PMVMatrix;
 
 public class MatrixCamera {
+
+	public PMVMatrix pmvMatrix = new PMVMatrix(true);
+	private boolean isDirty = true;
+	public GLUniformData pmvMatrixUniform;
+
 	protected float fov = 90f;
 	protected float aspect = 1f;
 	protected float zNear = 0.1f;
@@ -30,24 +38,13 @@ public class MatrixCamera {
 	private float yaw = 0; // around y
 	private float pitch = 0;
 	private float roll = 0;
-	public Matrix4f projectionMatrix = new Matrix4f();
-	private Matrix4f translationMatrix = new Matrix4f();
-	private Matrix4f xRotationMatrix = new Matrix4f();
-	private Matrix4f yRotationMatrix = new Matrix4f();
-	private Matrix4f zRotationMatrix = new Matrix4f();
-	private Matrix4f rotationMatrix = new Matrix4f();
-	public Matrix4f viewMatrix = new Matrix4f();
-	public Matrix4f worldMatrix = new Matrix4f();
 
 	private Vector3f look = new Vector3f();
 	private Vector3f right = new Vector3f();
 	private Vector3f up = new Vector3f();
 	public boolean isFrustumVisible = false;
 
-	@SuppressWarnings("unused")
-	private org.openmali.vecmath2.Matrix4f matrixToOpenMali(Matrix4f m) {
-		return new org.openmali.vecmath2.Matrix4f(matrixToTransposeArray(m));
-	}
+	int counter = 0;
 
 	public void pack() {
 		if (isAttachedToCameraman) {
@@ -55,37 +52,28 @@ public class MatrixCamera {
 			position.y = cameraman.getCameraY();
 			position.z = cameraman.getCameraZ();
 		}
+		pmvMatrix.glMatrixMode(GLMatrixFunc.GL_PROJECTION);
+		pmvMatrix.glLoadIdentity();
+		pmvMatrix.gluPerspective(fov, aspect, zNear, zFar);
 
-		worldMatrix.setIdentity();
-		packProjectionMatrix();
-		// projectionMatrix.transpose();
-		// worldMatrix.mul(projectionMatrix);
-		translationMatrix.setIdentity();
-		translationMatrix.m03 = position.x;
-		translationMatrix.m13 = position.y - 0.5f; // FIXME y is looking greater
-													// than it should
-		translationMatrix.m23 = position.z;
-		packRotation();
-		packView();
-		// after view matrix created, retrieve vectors:
-		viewMatrix.invert();
-		viewMatrix.transpose();
-		packLookVector();
-		packRightVector();
-		packUpVector();
+		pmvMatrix.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
+		pmvMatrix.glLoadIdentity();
+		pmvMatrix.glRotatef(360 - pitch, 1, 0, 0);
+		pmvMatrix.glRotatef(360 - yaw, 0, 1, 0);
+		pmvMatrix.glRotatef(360 - roll, 0, 0, 1);
+		pmvMatrix.glTranslatef(-position.x, -position.y, -position.z);
+		// pmvMatrix.setDirty();
+		pmvMatrix.update();
+		FloatBuffer mv = FloatBuffer.allocate(16);
+		pmvMatrix.glGetFloatv(GLMatrixFunc.GL_MODELVIEW_MATRIX, mv);
+
+		right.set(mv.get(0), mv.get(4), mv.get(8));
+		look.set(mv.get(2), mv.get(6), mv.get(10));
+		up.cross(look, right);
+
+		pmvMatrixUniform = new GLUniformData("mgl_PMVMatrix", 4, 4, pmvMatrix.glGetPMvMatrixf());
+
 		packFrustum();
-		// worldMatrix.mul(projectionMatrix, viewMatrix);
-		// worldMatrix.transpose();
-		// // oglViewMatrix.set(viewMatrix);
-		// // oglViewMatrix.transpose();
-		// frustum = FrustumUtil.extractFrustum(worldMatrix);
-		// Matrix4f vm = new Matrix4f(viewMatrix);
-		// vm.invert();
-		// frustum.compute(matrixToOpenMali(projectionMatrix),
-		// matrixToOpenMali(vm));
-		// ......
-		// finally
-		// ......
 	}
 
 	private ru.olamedia.math.Vector3f nearc;
@@ -124,98 +112,90 @@ public class MatrixCamera {
 		frustum.farPlane.set3Points(flt, flb, frb);
 	}
 
-	private float[] matrixToTransposeArray(Matrix4f m) {
-		return new float[] {
-				//
-				m.m00, m.m01, m.m02, m.m03,//
-				m.m10, m.m11, m.m12, m.m13,//
-				m.m20, m.m21, m.m22, m.m23,//
-				m.m30, m.m31, m.m32, m.m33,//
-		};
-	}
-
-	private float[] matrixToArray(Matrix4f m) {
-		return new float[] {
-				//
-				m.m00, m.m10, m.m20, m.m30,//
-				m.m01, m.m11, m.m21, m.m31,//
-				m.m02, m.m12, m.m22, m.m32,//
-				m.m03, m.m13, m.m23, m.m33,//
-		};
-	}
-
 	private GLU glu;
 
 	public void setUp(GLAutoDrawable drawable) {
-		GL2 gl = drawable.getGL().getGL2();
 		updateKeyboard();
 		updateMouse();
 		if (glu == null) {
 			glu = new GLU();
 		}
-		// gl.glMatrixMode(GL2.GL_PROJECTION);
-		// gl.glLoadIdentity();
-		// glu.gluPerspective(100f, aspect, 0.2, 1000);
-		loadProjectionMatrix(drawable);
-		loadViewMatrix(drawable);
-
-		// gl.glColor3f(1, 0, 0);
-		// PlaneRenderer.render(frustum.leftPlane, drawable);
-		// gl.glColor3f(1, 1, 0);
-		// PlaneRenderer.render(frustum.rightPlane, drawable);
-		// gl.glColor3f(1, 0, 1);
-		// PlaneRenderer.render(frustum.topPlane, drawable);
-		// gl.glColor3f(1, 1, 1);
-		// PlaneRenderer.render(frustum.bottomPlane, drawable);
-
-		// VectorRenderer.render(nearc, frustum.leftPlane.n, drawable);
+		if (isDirty) {
+			pack();
+		}
+		GL2 gl = GLContext.getCurrentGL().getGL2();
+		gl.glMatrixMode(GLMatrixFunc.GL_PROJECTION);
+		gl.glLoadMatrixf(pmvMatrix.glGetPMatrixf());
+		gl.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
+		FloatBuffer pmv = FloatBuffer.allocate(16);
+		pmvMatrix.glGetFloatv(GLMatrixFunc.GL_MODELVIEW_MATRIX, pmv);
+		gl.glLoadMatrixf(pmv);
 	}
 
-	private void loadViewMatrix(GLAutoDrawable drawable) {
-		GL2 gl = drawable.getGL().getGL2();
-		gl.glMatrixMode(GL2.GL_MODELVIEW);
-		gl.glLoadTransposeMatrixf(matrixToArray(viewMatrix), 0);
+	public float intersectsRectangle(Vector3f vertex1, Vector3f vertex2, Vector3f vertex3, Vector3f vertex4) {
+		return Math.min(intersectsTriangle(vertex1, vertex2, vertex3), intersectsTriangle(vertex3, vertex4, vertex1));
 	}
 
-	private void loadProjectionMatrix(GLAutoDrawable drawable) {
-		GL2 gl = drawable.getGL().getGL2();
-		gl.glMatrixMode(GL2.GL_PROJECTION);
-		gl.glLoadTransposeMatrixf(matrixToArray(projectionMatrix), 0);
-	}
+	public float intersectsTriangle(Vector3f vertex1, Vector3f vertex2, Vector3f vertex3) {
+		// Compute vectors along two edges of the triangle.
+		Vector3f edge1 = new Vector3f(), edge2 = new Vector3f();
 
-	private void packProjectionMatrix() {
-		projectionMatrix.setZero();
-		final float tang = FastMath.tan(FastMath.toRad(fov) / 2.0f);
-		final float size = zNear * tang;
-		float left = -size, right = size, bottom = -size / aspect, top = size / aspect;
-		// First Column
-		projectionMatrix.m00 = 2 * zNear / (right - left);
-		// Second Column
-		projectionMatrix.m11 = 2 * zNear / (top - bottom);
-		// Third Column
-		projectionMatrix.m20 = (right + left) / (right - left);
-		projectionMatrix.m21 = (top + bottom) / (top - bottom);
-		projectionMatrix.m22 = -(zFar + zNear) / (zFar - zNear);
-		projectionMatrix.m23 = -1;
-		// Fourth Column
-		projectionMatrix.m32 = -(2 * zFar * zNear) / (zFar - zNear);
-	}
+		edge1.sub(vertex2, vertex1);
+		edge2.sub(vertex3, vertex1);
 
-	private void packRotation() {
-		xRotationMatrix.rotX(toRad(pitch));
-		yRotationMatrix.rotY(toRad(yaw));
-		zRotationMatrix.rotZ(toRad(roll));
+		// Compute the determinant.
+		Vector3f directionCrossEdge2 = new Vector3f();
+		directionCrossEdge2.cross(look, edge2);
 
-		rotationMatrix.setIdentity();
-		rotationMatrix.mul(zRotationMatrix);
-		rotationMatrix.mul(yRotationMatrix);
-		rotationMatrix.mul(xRotationMatrix);
+		float determinant = directionCrossEdge2.dot(edge1);
+		// If the ray and triangle are parallel, there is no collision.
+		if (determinant > -.0000001f && determinant < .0000001f) {
+			return Float.MAX_VALUE;
+		}
+
+		float inverseDeterminant = 1.0f / determinant;
+
+		// Calculate the U parameter of the intersection point.
+		Vector3f distanceVector = new Vector3f();
+		distanceVector.sub(position, vertex1);
+
+		float triangleU = directionCrossEdge2.dot(distanceVector);
+		triangleU *= inverseDeterminant;
+
+		// Make sure the U is inside the triangle.
+		if (triangleU < 0 || triangleU > 1) {
+			return Float.MAX_VALUE;
+		}
+
+		// Calculate the V parameter of the intersection point.
+		Vector3f distanceCrossEdge1 = new Vector3f();
+		distanceCrossEdge1.cross(distanceVector, edge1);
+
+		float triangleV = look.dot(distanceCrossEdge1);
+		triangleV *= inverseDeterminant;
+
+		// Make sure the V is inside the triangle.
+		if (triangleV < 0 || triangleU + triangleV > 1) {
+			return Float.MAX_VALUE;
+		}
+
+		// Get the distance to the face from our ray origin
+		float rayDistance = distanceCrossEdge1.dot(edge2);
+		rayDistance *= inverseDeterminant;
+
+		// Is the triangle behind us?
+		if (rayDistance < 0) {
+			rayDistance *= -1;
+			return Float.MAX_VALUE;
+		}
+		return rayDistance;
 	}
 
 	private void translatePoint(Vector3f point, Vector3f direction, float delta) {
 		point.x += direction.x * delta;
 		point.y += direction.y * delta;
 		point.z += direction.z * delta;
+		setDirty();
 	}
 
 	private void translate(Vector3f direction, float delta) {
@@ -228,31 +208,12 @@ public class MatrixCamera {
 		translate(look, -dz);
 	}
 
-	private void packView() {
-		viewMatrix.setIdentity();
-		viewMatrix.mul(translationMatrix);
-		viewMatrix.mul(rotationMatrix);
-
-	}
-
-	private void packUpVector() {
-		up.set(viewMatrix.m01, viewMatrix.m11, viewMatrix.m21);
-	}
-
-	private void packRightVector() {
-		right.set(viewMatrix.m00, viewMatrix.m10, viewMatrix.m20);
-	}
-
-	private void packLookVector() {
-		look.set(viewMatrix.m02, viewMatrix.m12, viewMatrix.m22);
-	}
-
 	public MatrixCamera() {
 		right = new Vector3f(1, 0, 0);
 		up = new Vector3f(0, 1, 0);
 		look = new Vector3f(0, 0, 1);
 		isPitchLocked = true;
-		pack();
+		setDirty();
 	}
 
 	public void captureControls() {
@@ -269,6 +230,7 @@ public class MatrixCamera {
 		pitch += -dy;
 		yaw = yaw % 360;
 		pitch = pitch % 360;
+		setDirty();
 	}
 
 	public void updateMouse() {
@@ -279,7 +241,6 @@ public class MatrixCamera {
 				pitch = maxPitch;
 			}
 		}
-		pack();
 	}
 
 	public void lockPitch(float min, float max) {
@@ -311,9 +272,7 @@ public class MatrixCamera {
 					(isAttachedToCameraman ? 0 : flyUp * distance - flyDown * distance),//
 					up * distance - down * distance//
 			);
-			pack();
-			// System.out.println("Moving... " + position.getX() + " "
-			// + position.getY() + " " + position.getZ());
+			setDirty();
 		}
 	}
 
@@ -335,6 +294,7 @@ public class MatrixCamera {
 	 */
 	public void setFov(float fov) {
 		this.fov = fov;
+		setDirty();
 	}
 
 	/**
@@ -350,6 +310,7 @@ public class MatrixCamera {
 	 */
 	public void setAspect(float aspect) {
 		this.aspect = aspect;
+		setDirty();
 	}
 
 	/**
@@ -365,6 +326,7 @@ public class MatrixCamera {
 	 */
 	public void setzNear(float zNear) {
 		this.zNear = zNear;
+		setDirty();
 	}
 
 	/**
@@ -380,6 +342,7 @@ public class MatrixCamera {
 	 */
 	public void setzFar(float zFar) {
 		this.zFar = zFar;
+		setDirty();
 	}
 
 	/**
@@ -395,6 +358,7 @@ public class MatrixCamera {
 	 */
 	public void setYaw(float yaw) {
 		this.yaw = yaw;
+		setDirty();
 	}
 
 	/**
@@ -410,6 +374,7 @@ public class MatrixCamera {
 	 */
 	public void setPitch(float pitch) {
 		this.pitch = pitch;
+		setDirty();
 	}
 
 	/**
@@ -474,14 +439,21 @@ public class MatrixCamera {
 
 	public void setX(float x) {
 		position.x = x;
+		setDirty();
 	}
 
 	public void setY(float y) {
 		position.y = y;
+		setDirty();
 	}
 
 	public void setZ(float z) {
 		position.z = z;
+		setDirty();
+	}
+
+	private void setDirty() {
+		isDirty = true;
 	}
 
 	public float getX() {
@@ -494,14 +466,6 @@ public class MatrixCamera {
 
 	public float getZ() {
 		return position.z;
-	}
-
-	public float[] getViewMatrixArray() {
-		return matrixToArray(viewMatrix);
-	}
-
-	public float[] getProjectionMatrixArray() {
-		return matrixToArray(viewMatrix);
 	}
 
 	public float getRoll() {

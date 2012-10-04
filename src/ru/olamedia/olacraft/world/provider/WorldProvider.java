@@ -4,6 +4,7 @@ import ru.olamedia.olacraft.game.SpawnLocation;
 import ru.olamedia.olacraft.world.WorldInfo;
 import ru.olamedia.olacraft.world.block.Block;
 import ru.olamedia.olacraft.world.chunk.Chunk;
+import ru.olamedia.olacraft.world.chunk.ChunkUnavailableException;
 import ru.olamedia.olacraft.world.data.ChunkData;
 import ru.olamedia.olacraft.world.data.RegionData;
 import ru.olamedia.olacraft.world.dataProvider.AbstractChunkDataProvider;
@@ -58,34 +59,34 @@ public class WorldProvider {
 		return l;
 	}
 
-	public boolean renderBottom(int x, int y, int z) {
+	public boolean renderBottom(int x, int y, int z) throws ChunkUnavailableException {
 		return (!isEmptyBlock(x, y, z)) && (isEmptyBlock(x, y - 1, z));
 	}
 
-	public boolean renderTop(int x, int y, int z) {
+	public boolean renderTop(int x, int y, int z) throws ChunkUnavailableException {
 		// System.out.println("Check render top " + y + "[" + x + " " + y + " "
 		// + z + "]" + !isEmptyBlock(x, y, z)
 		// + " && " + isEmptyBlock(x, y + 1, z));
 		return (!isEmptyBlock(x, y, z)) && (isEmptyBlock(x, y + 1, z));
 	}
 
-	public boolean renderLeft(int x, int y, int z) {
+	public boolean renderLeft(int x, int y, int z) throws ChunkUnavailableException {
 		return (!isEmptyBlock(x, y, z)) && (isEmptyBlock(x - 1, y, z));
 	}
 
-	public boolean renderRight(int x, int y, int z) {
+	public boolean renderRight(int x, int y, int z) throws ChunkUnavailableException {
 		return (!isEmptyBlock(x, y, z)) && (isEmptyBlock(x + 1, y, z));
 	}
 
-	public boolean renderBack(int x, int y, int z) {
+	public boolean renderBack(int x, int y, int z) throws ChunkUnavailableException {
 		return (!isEmptyBlock(x, y, z)) && (isEmptyBlock(x, y, z - 1));
 	}
 
-	public boolean renderFront(int x, int y, int z) {
+	public boolean renderFront(int x, int y, int z) throws ChunkUnavailableException {
 		return (!isEmptyBlock(x, y, z)) && (isEmptyBlock(x, y, z + 1));
 	}
 
-	public boolean isEmptyBlock(int x, int y, int z) {
+	public boolean isEmptyBlock(int x, int y, int z) throws ChunkUnavailableException {
 		BlockLocation blockLocation = new BlockLocation(x, y, z);
 
 		if (isChunkAvailable(blockLocation.getChunkLocation())) {
@@ -93,11 +94,10 @@ public class WorldProvider {
 			if (null != data) {
 				return data.isEmpty(blockLocation);
 			} else {
-				// System.out.println("chunk null " + x + " " + y + " " + z);
+				System.out.println("chunk null " + x + " " + y + " " + z);
 			}
 		} else {
-			// System.out.println("chunk not available " + x + " " + y + " " +
-			// z);
+			throw new ChunkUnavailableException();
 		}
 		return true;
 	}

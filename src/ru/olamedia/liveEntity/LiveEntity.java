@@ -7,9 +7,13 @@ import com.jogamp.newt.event.KeyEvent;
 import ru.olamedia.camera.Cameraman;
 import ru.olamedia.olacraft.game.Game;
 import ru.olamedia.olacraft.inventory.Inventory;
+import ru.olamedia.olacraft.network.GameClient;
+import ru.olamedia.olacraft.scene.GameScene;
 import ru.olamedia.olacraft.world.block.Block;
 import ru.olamedia.olacraft.world.blockStack.BlockStack;
 import ru.olamedia.olacraft.world.blockTypes.GravelBlockType;
+import ru.olamedia.olacraft.world.chunk.ChunkUnavailableException;
+import ru.olamedia.olacraft.world.location.BlockLocation;
 import ru.olamedia.input.Keyboard;
 
 public class LiveEntity implements Cameraman {
@@ -101,15 +105,16 @@ public class LiveEntity implements Cameraman {
 		return getHeight() * 0.9f;
 	}
 
-	public boolean isEmptyUnderFoot() {
+	public boolean isEmptyUnderFoot() throws ChunkUnavailableException {
 		return isEmptyBlock(0, -1, 0);
 	}
 
 	/**
 	 * @param delta
 	 *            the elapsed time since the last frame update in seconds
+	 * @throws ChunkUnavailableException
 	 */
-	public void updateKeyboard(float delta) {
+	public void updateKeyboard(float delta) throws ChunkUnavailableException {
 		acceleration.x = 0;
 		acceleration.y = 0;
 		acceleration.z = 0;
@@ -170,53 +175,16 @@ public class LiveEntity implements Cameraman {
 		acceleration.x *= normalSpeed;// running
 		acceleration.y *= normalSpeed;
 		acceleration.z *= normalSpeed;
-
-		// if (inJump) {
-		// float FPS = (float) (delta / 1);
-		// float accelY = Game.world.gravity;
-		// float dt = (float) (delta / 1); // in seconds
-		// vVelocity -= accelY * dt;
-		// y += vVelocity * dt;
-		// if (vVelocity < 0) {
-		// inFall = true;
-		// }
-		// if (vVelocity > 0) {
-		// if (!keyJump) {
-		// vVelocity = 0;
-		// }
-		// }
-		// if (!applyPosition()) {
-		// if (vVelocity > 0) {
-		// // roof
-		// vVelocity = 0;
-		// } else {
-		// y = underFoot().getY() + 1;
-		// vVelocity = 0;
-		// inJump = false;
-		// inFall = false;
-		// }
-		// }
-		//
-		// } else {
-		// if (!inFall) {
-		// if (inAir()) {
-		//
-		// inJump = true;
-		// inFall = true;
-		// }
-		// }
-		// }
-		if (!onGround && !inAir()) {
-			// LANDING
+		if (!inAir()) {
+			// FIX Y TO GROUND LEVEL
 			onGround = true;
 			inJump = false;
 			velocity.y = 0;
 			acceleration.y = 0;
-			y = getJumperBlock().getY() + 1;
+			y = getJumperBlock().getY() + 0.5f;
 		}
 		if (onGround && velocity.length() > 0 && acceleration.length() > 0) {
-			// BEFORE NEW JUMP
-			// Check direction changed
+			// SLOWLY CHANGE DIRECTIONS, BEFORE NEW JUMP, IF MOVING
 			float vy = velocity.y;
 			float ay = acceleration.y;
 			velocity.y = 0;
@@ -236,11 +204,6 @@ public class LiveEntity implements Cameraman {
 				if (velocity.length() * Math.cos(dAngle) > speedLimit) {
 					float deltaSpeed = (float) (velocity.length() * Math.cos(dAngle) - speedLimit);
 					velocity.scale((1 / velocity.length()) * (velocity.length() - deltaSpeed * 0.7f));
-					// velocity.scale((float) (10 / velocity.length() *
-					// Math.cos(dAngle)));
-					// velocity.scale((float) (velocity.length()
-					// - (velocity.length() - (10 / velocity.length() *
-					// Math.cos(dAngle))) * 0.5f * delta));
 				}
 			} else {
 				if (velocity.length() > speedLimit) {
@@ -252,7 +215,7 @@ public class LiveEntity implements Cameraman {
 			acceleration.y = ay;
 		}
 		if (onGround && keyJump) {
-			// JUMPING
+			// START NEW JUMP
 			inJump = true;
 			onGround = false;
 			velocity.y = getJumpVelocity(getMaxJumpHeight());
@@ -262,7 +225,8 @@ public class LiveEntity implements Cameraman {
 			System.out.println("Starting velocity " + velocity.y);
 		}
 
-		if (onGround && !inJump) {
+		if (onGround) {
+			// FIX SPEED WHILE ON GROUND
 			if (velocity.length() > normalSpeed) {
 				velocity.scale(normalSpeed / velocity.length());
 			}
@@ -303,7 +267,8 @@ public class LiveEntity implements Cameraman {
 		// }
 		// velocity.scale(qd);
 
-		if (!onGround || inAir()) { // 0_o
+		if (!onGround) {
+			// APPLY GRAVITY
 			acceleration.y = -Game.client.getWorldInfo().gravity;
 		}
 
@@ -417,29 +382,44 @@ public class LiveEntity implements Cameraman {
 
 			}
 		}
-	}
 
-	private Block underFoot() {
-		return getBlock(0, -1, 0);
 	}
 
 	public boolean isEmptyBlock(int dx, int dy, int dz) {
-		return Game.client.getWorldProvider().isEmptyBlock((int) x + dx, (int) Math.ceil(y) + dy, (int) z + dz);
+		BlockLocation loc = new BlockLocation((int) x + dx, (int) Math.ceil(y) + dy, (int) z + dz);
+		if (!Game.client.getWorldProvider().isChunkAvailable(loc.getChunkLocation())) {
+			Game.client.getWorldProvider().loadChunk(loc.getChunkLocation());
+			return false;
+		}
+		
+		try {
+			return Game.client.getWorldProvider().isEmptyBlock((int) x + dx, (int) Math.ceil(y) + dy, (int) z + dz);
+		} catch (ChunkUnavailableException e) {
+			e.printStackTrace();
+			return false;
+		}
 	}
 
-	public boolean haveBlockUnder(int dy) {
+	public boolean haveBlockUnder(int dy) throws ChunkUnavailableException {
 		return !isEmptyBlock(0, -dy, 0);
 	}
 
-	public boolean inAir() {
-		return !haveBlockUnder(1);
+	public boolean inAir() throws ChunkUnavailableException {
+		if (!isEmptyBlock(0, -1, 0)) {
+			if (y > getBlock(0, -1, 0).getY() + 0.5f) {
+				return true;
+			}
+			return false;
+		} else {
+			return true;
+		}
 	}
 
-	public boolean underJumpHeight() {
+	public boolean underJumpHeight() throws ChunkUnavailableException {
 		return haveBlockUnder(1) || haveBlockUnder(2);
 	}
 
-	public Block getJumperBlock() {
+	public Block getJumperBlock() throws ChunkUnavailableException {
 		if (haveBlockUnder(1)) {
 			return getBlock(0, -1, 0);
 		}
@@ -465,7 +445,42 @@ public class LiveEntity implements Cameraman {
 		z = savedZ;
 	}
 
-	public boolean hasValidPosition() {
+	public boolean hasValidPosition(Block head, boolean checkTop, boolean checkBottom) throws ChunkUnavailableException {
+		// Check if we're too near to the wall
+		Block[] LRNeighbors = { head.getNeighbor(-1, 0, 0), head.getNeighbor(1, 0, 0) };
+		for (Block n : LRNeighbors) {
+			if (n.isEmpty()) {
+				continue;
+			}
+			if (Math.abs(n.getX() - x) < 0.5) {
+				return false;
+			}
+		}
+		Block[] FBNeighbors = { head.getNeighbor(0, 0, -1), head.getNeighbor(0, 0, 1) };
+		for (Block n : FBNeighbors) {
+			if (n.isEmpty()) {
+				continue;
+			}
+			if (Math.abs(n.getZ() - z) < 0.5) {
+				return false;
+			}
+		}
+		// if (checkBottom) {
+		// Block n = head.getNeighbor(0, -1, 0);
+		// if (Math.abs(n.getY() - y) < 0.5) {
+		// return false;
+		// }
+		// }
+		// if (checkTop) {
+		// Block n = head.getNeighbor(0, 1, 0);
+		// if (Math.abs(n.getY() - y) < 0.5) {
+		// return false;
+		// }
+		// }
+		return head.isEmpty();
+	}
+
+	public boolean hasValidPosition() throws ChunkUnavailableException {
 		Block foot = getBlock(0, 0, 0);
 		Block underFoot = getBlock(0, -1, 0);
 		Block head = getBlock(0, (int) getHeight(), 0);
@@ -478,51 +493,11 @@ public class LiveEntity implements Cameraman {
 				}
 			}
 		}
-		// Check if we're too near to the wall
-		float screenPlane = 0.2f;
-		float screenPlaneVertical = 0.4f;
-		Block[] headNeighbors = head.getNeighbors();
-		for (Block b : headNeighbors) {
-			if (b.isEmpty()) {
-				continue;
-			}
-			if (b.getX() != head.getX()) {
-				// LEFT or RIGHT
-				float testX = b.getX();
-				if (testX < head.getX()) {
-					// LEFT, fixing
-					testX = head.getX();
-				}
-				float minDistance = Math.abs(testX - getX());
-				if (minDistance < screenPlane) {
-					return false;
-				}
-			}
-			if (b.getY() > head.getY()) { // Upper block
-				float minDistance = Math.abs(b.getY() - getY() + this.getHeight());// player
-																					// height
-				if (minDistance < screenPlaneVertical) {
-					return false;
-				}
-			}
 
-			if (b.getZ() != head.getZ()) {
-				// FRONT OR BACK
-				float testZ = b.getZ();
-				if (testZ < head.getZ()) {
-					// BACK, fixing
-					testZ = head.getZ();
-				}
-				float minDistance = Math.abs(testZ - getZ());
-				if (minDistance < screenPlane) {
-					return false;
-				}
-			}
-		}
-		return foot.isEmpty() && head.isEmpty();
+		return hasValidPosition(foot, false, true) && hasValidPosition(head, true, false);
 	}
 
-	public boolean applyPosition() {
+	public boolean applyPosition() throws ChunkUnavailableException {
 		isPositionChanged = false;
 		if (hasValidPosition()) {
 			backupPosition();
@@ -537,7 +512,7 @@ public class LiveEntity implements Cameraman {
 		// overriden at player class
 	}
 
-	public void fixPosition() {
+	public void fixPosition() throws ChunkUnavailableException {
 		float dx = x - savedX;
 		float dy = y - savedY;
 		float dz = z - savedZ;
@@ -561,11 +536,13 @@ public class LiveEntity implements Cameraman {
 		isPositionChanged = false;
 		backupPosition();
 		onGround = false;
-		Block below = getBlock(0, -1, 0);
-		if (y == below.getY() + 1) {
-			onGround = true;
+		try {
+			onGround = !inAir();
+			updateKeyboard(delta);
+		} catch (ChunkUnavailableException e) {
+			e.printStackTrace();
+			System.exit(0);
 		}
-		updateKeyboard(delta);
 		// Check if position is valid
 		// fixPosition();
 

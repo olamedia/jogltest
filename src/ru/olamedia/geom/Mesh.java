@@ -7,7 +7,6 @@ import java.util.HashMap;
 
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
-import javax.media.opengl.GL2ES1;
 import javax.media.opengl.GL2ES2;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLContext;
@@ -45,7 +44,6 @@ public class Mesh {
 
 	private static int vertexSize = 10;
 
-	private GLArrayDataServer interleaved;
 	private HashMap<Integer, Integer> materials = new HashMap<Integer, Integer>();
 	private HashMap<Integer, GLArrayDataServer> arrays = new HashMap<Integer, GLArrayDataServer>();
 
@@ -60,7 +58,6 @@ public class Mesh {
 		this.GLTexture = tex;
 	}
 
-	@SuppressWarnings("unused")
 	private static boolean useVbo = true;
 
 	private static boolean useQuad = true;
@@ -78,25 +75,6 @@ public class Mesh {
 
 	private static FloatBuffer generateFloatBuffer(int size) {
 		return ByteBuffer.allocateDirect(size * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-	}
-
-	/**
-	 * Reallocates an array with a new size, and copies the contents of the old
-	 * array to the new array.
-	 * 
-	 * @param oldArray
-	 *            the old array, to be reallocated.
-	 * @param newSize
-	 *            the new array size.
-	 * @return A new array with the same contents.
-	 */
-	private static float[] resizeArray(float[] oldArray, int newSize) {
-		int oldSize = oldArray.length;
-		float[] newArray = new float[newSize];
-		int preserveLength = Math.min(oldSize, newSize);
-		if (preserveLength > 0)
-			System.arraycopy(oldArray, 0, newArray, 0, preserveLength);
-		return newArray;
 	}
 
 	public void compact() {
@@ -145,14 +123,6 @@ public class Mesh {
 		if (vertexCount > 0) {
 			// System.out.println(interleaved);
 		}
-		/*
-		 * buffer.position(0);
-		 * buffer.limit(size * vertexSize);
-		 * buffer.position(0);
-		 * buffer.limit(vertexCount * vertexSize);
-		 * buffer.compact();
-		 * buffer.position(0);
-		 */
 	}
 
 	public void endMesh() {
@@ -248,8 +218,8 @@ public class Mesh {
 		}
 		GL glx = GLContext.getCurrentGL();
 		if (useVbo) {
-			//GL2ES2 gl = glx.getGL2ES2();
-			GL2 gl = glx.getGL2();
+			GL2ES2 gl = glx.getGL2ES2();
+			//GL2 gl = glx.getGL2();
 			for (Integer m : materials.keySet()) {
 				gl.glEnable(GL.GL_TEXTURE_2D);
 				gl.glBindTexture(GL.GL_TEXTURE_2D, (int) m);

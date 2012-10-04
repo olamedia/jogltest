@@ -1,8 +1,6 @@
 package ru.olamedia.olacraft.render.jogl;
 
-import javax.media.opengl.GL;
 import javax.media.opengl.GLAutoDrawable;
-import javax.media.opengl.GLContext;
 
 import ru.olamedia.Options;
 import ru.olamedia.geom.SimpleQuadMesh;
@@ -36,12 +34,13 @@ public class ChunkRenderer {
 	public boolean renderChunk(Chunk chunk, boolean skipnew) {
 
 		if (!chunk.isAvailable()) {
-			// System.out.println("not available");
+			System.out.println("not available " + chunk);
 			chunk.request();
 			return skipnew;
 		}
 
 		if (!chunk.isNeighborsAvailable()) {
+			System.out.println("not available " + chunk);
 			chunk.requestNeighbors();
 			return skipnew;
 		}

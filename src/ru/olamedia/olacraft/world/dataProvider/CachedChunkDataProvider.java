@@ -1,8 +1,6 @@
 package ru.olamedia.olacraft.world.dataProvider;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import ru.olamedia.olacraft.world.data.RegionData;
 import ru.olamedia.olacraft.world.location.RegionLocation;
@@ -10,7 +8,6 @@ import ru.olamedia.olacraft.world.location.RegionLocation;
 public class CachedChunkDataProvider extends AbstractChunkDataProvider {
 	private AbstractChunkDataProvider provider;
 	private HashMap<String, RegionData> regionMap = new HashMap<String, RegionData>();
-	private List<String> loading = new ArrayList<String>();
 
 	public CachedChunkDataProvider(AbstractChunkDataProvider provider) {
 		this.provider = provider;

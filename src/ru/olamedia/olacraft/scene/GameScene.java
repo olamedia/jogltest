@@ -23,10 +23,12 @@ import ru.olamedia.olacraft.render.jogl.InventoryRenderer;
 import ru.olamedia.olacraft.render.jogl.joglViewport;
 import ru.olamedia.olacraft.weapon.Bullet;
 import ru.olamedia.olacraft.weapon.BulletScene;
+import ru.olamedia.olacraft.world.block.Block;
 import ru.olamedia.olacraft.world.blockTypes.AbstractBlockType;
 import ru.olamedia.olacraft.world.blockTypes.GrassBlockType;
 import ru.olamedia.olacraft.world.chunk.BlockSlice;
 import ru.olamedia.olacraft.world.chunk.ChunkSlice;
+import ru.olamedia.olacraft.world.chunk.ChunkUnavailableException;
 import ru.olamedia.olacraft.world.provider.WorldProvider;
 import ru.olamedia.player.Player;
 import ru.olamedia.vbo.VBO;
@@ -134,6 +136,8 @@ public class GameScene {
 		return liveEntities;
 	}
 
+	Block nearestBlock = null;
+
 	public void tick() {
 		time.tick();
 		Game.instance.tick();
@@ -141,6 +145,9 @@ public class GameScene {
 		Game.instance.camera.setAspect(aspect);
 		// bullets.update(Game.instance.getDelta());
 		physics.getWorld().step(Game.instance.getDelta());
+		BlockSlice pickSlice = new BlockSlice(provider, 10, 10, 10);
+		pickSlice.setCenter(player.getCameraX(), player.getCameraY(), player.getCameraZ());
+		nearestBlock = pickSlice.getNearest(Game.instance.camera);
 	}
 
 	public void render(GLAutoDrawable drawable) {
@@ -161,6 +168,32 @@ public class GameScene {
 		gl.glPushMatrix();
 		gl.glPushAttrib(GL2.GL_ALL_ATTRIB_BITS);
 		Game.instance.camera.setUp(drawable);
+		// RENDER SUN
+		gl.glPushAttrib(GL2.GL_ALL_ATTRIB_BITS);
+		gl.glEnable(GL2.GL_BLEND); // Enable Blending
+		gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE); // Set Blending Mode To
+														// Mix Based On SRC
+														// Alpha
+		GLUquadric sun = glu.gluNewQuadric();
+		glu.gluQuadricDrawStyle(sun, GLU.GLU_FILL);
+		glu.gluQuadricNormals(sun, GLU.GLU_SMOOTH);
+		gl.glPushMatrix();
+		gl.glTranslatef(time.sun.getX() + player.getCameraX(), time.sun.getY(), time.sun.getZ() + player.getCameraZ());
+		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
+		gl.glColor4f(1, 1, 1, 0.02f);
+		glu.gluSphere(sun, 100f, 10, 10);
+		glu.gluSphere(sun, 90f, 10, 10);
+		glu.gluSphere(sun, 80f, 10, 10);
+		glu.gluSphere(sun, 70f, 10, 10);
+		glu.gluSphere(sun, 60f, 10, 10);
+		glu.gluSphere(sun, 50f, 10, 10);
+		glu.gluSphere(sun, 40f, 10, 10);
+		glu.gluSphere(sun, 35f, 10, 10);
+		gl.glColor4f(1, 1, 1, 1f);
+		glu.gluSphere(sun, 30f, 10, 10);
+		gl.glPopMatrix();
+		gl.glPopAttrib();
+
 		viewSlice.setCenter((int) Game.instance.camera.getX(), (int) Game.instance.camera.getY(),
 				(int) Game.instance.camera.getZ());
 		// RENDER BLOCKS
@@ -190,7 +223,7 @@ public class GameScene {
 			gl.glPushMatrix();
 			gl.glTranslatef(entity.getX(), entity.getCameraY(), entity.getZ());
 			gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_LINE);
-			glu.gluSphere(qobj0, 0.5f, 10, 10);
+			glu.gluSphere(qobj0, 0.1f, 10, 10);
 			gl.glPopMatrix();
 		}
 		gl.glPopAttrib();
@@ -246,12 +279,14 @@ public class GameScene {
 		viewport.drawText("mem: " + (heap.getUsed() / (1024 * 1024)) + "/" + (heap.getMax() / (1024 * 1024)), 10,
 				height - 50);
 
-		viewport.drawText("y: " + Game.instance.player.getY(), width - msz - 10, height - msz - 25);
+		viewport.drawText("y: " + Game.instance.player.getY(), width - msz - 10, height - msz - 20);
+		viewport.drawText("y: " + Game.instance.player.getCameraY() + " (cam)", width - msz - 10, height - msz - 30);
 		viewport.drawText("x: " + Game.instance.player.getX(), width - msz - 10, height - msz - 40);
-		viewport.drawText("z: " + Game.instance.player.getZ(), width - msz - 10, height - msz - 55);
+		viewport.drawText("z: " + Game.instance.player.getZ(), width - msz - 10, height - msz - 50);
 		viewport.drawText("players: " + liveEntities.size(), width - msz - 10, height - msz - 70);
 		viewport.drawText("bullets: " + getBulletsCount(), width - msz - 10, height - msz - 95);
-		viewport.drawText("inAir: " + Game.instance.player.inAir(), width - msz - 10, height - msz - 110);
+		viewport.drawText("y velocity: " + player.velocity.y + " y accel: " + player.acceleration.y + " inJump: "
+				+ player.inJump + " onGround: " + player.onGround, width - msz - 350 - 10, height - msz - 110);
 		viewport.drawText("rdistance: " + renderDistance, width - msz - 10, height - msz - 155);
 
 		ChunkSlice cs = viewSlice.getChunkSlice();
@@ -259,6 +294,10 @@ public class GameScene {
 				+ (cs.getY() + cs.getHeight() - 1) + " z: " + cs.getZ() + ".." + (cs.getZ() + cs.getDepth() - 1), width
 				- msz * 2 - 10, height - msz - 170);
 		viewport.drawText("time: " + time.getDateTimeString(), width - msz * 2 - 10, height - msz - 185);
+		if (nearestBlock != null) {
+			viewport.drawText("block: " + nearestBlock.getX() + ":" + nearestBlock.getY() + ":" + nearestBlock.getZ()
+					+ " d " + nearestBlock.getDistance(Game.instance.camera), width - msz * 2 - 10, height - msz - 200);
+		}
 
 		gl.glPopAttrib();
 		gl.glPopMatrix();

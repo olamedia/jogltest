@@ -97,12 +97,12 @@ public class Chunk extends BlockSlice {
 			return mesh;
 		}
 		if (offset.y > provider.getInfo().maxHeight) {
-			isMeshCostructed = true;
-			return null;
+			// isMeshCostructed = true;
+			// return null;
 		}
 		if (offset.y < provider.getInfo().minHeight) {
-			isMeshCostructed = true;
-			return null;
+			// isMeshCostructed = true;
+			// return null;
 		}
 		if (null == mesh) {
 			mesh = new SimpleQuadMesh(14739); // unindexed
@@ -117,78 +117,81 @@ public class Chunk extends BlockSlice {
 				for (int y = offset.y; y < offset.y + getHeight(); y++) {
 					for (int z = offset.z; z < offset.z + getDepth(); z++) {
 						//
-
-						if (!isEmptyBlock(x, y, z)) {
-							mesh.setTranslation(x, y, z);
-							// mesh.setColor4f(0, 1, 0, 1);
-							float cbase = (float) (y / 200.0) * (float) (7.0 / 10.0);
-							if (cbase > 9 / 10) {
-								cbase = (float) (9.0 / 10.0);
-							}
-							// cbase = (float) (9.0 / 10.0);
-							float cred, cgreen, cblue;
-							// cbase;
-							cred = cgreen = cblue = getLightLevel256(x, y, z);
-							if (x == 1) {
-								mesh.setColor4f(1, 0, 0, 1);
-								// red to the right
-							}
-							if (x == 0 || z == 0) {
-								if (y == 6) {
+						try {
+							if (!isEmptyBlock(x, y, z)) {
+								mesh.setTranslation(x, y, z);
+								// mesh.setColor4f(0, 1, 0, 1);
+								float cbase = (float) (y / 200.0) * (float) (7.0 / 10.0);
+								if (cbase > 9 / 10) {
+									cbase = (float) (9.0 / 10.0);
+								}
+								// cbase = (float) (9.0 / 10.0);
+								float cred, cgreen, cblue;
+								// cbase;
+								cred = cgreen = cblue = getLightLevel256(x, y, z);
+								if (x == 1) {
 									mesh.setColor4f(1, 0, 0, 1);
-								} else if (y % 2 == 0) {
-									mesh.setColor4f(1, 0, 1, 1);
-								} else {
-									mesh.setColor4f(1, 1, 0, 1);
+									// red to the right
 								}
-							}
-							if (z == 1) {
-								mesh.setColor4f(0, 0, 1, 1);
-								// blue to the bottom
-							}
-							if (renderBottom(x, y, z)) {
-								setMeshColor(mesh, x, y - 1, z, false);
-								mesh.setTexture(grass.getBottomTexture());
-								mesh.addBottomQuad();
-								visibleBottom++;
-							}
-							if (renderTop(x, y, z)) {
-								if (x == 15 || z == 15) {
-									// debug: show through..
-								} else {
-									setMeshColor(mesh, x, y + 1, z, false);
-									mesh.setTexture(grass.getTopTexture());
-									mesh.addTopQuad();
+								if (x == 0 || z == 0) {
+									if (y == 6) {
+										mesh.setColor4f(1, 0, 0, 1);
+									} else if (y % 2 == 0) {
+										mesh.setColor4f(1, 0, 1, 1);
+									} else {
+										mesh.setColor4f(1, 1, 0, 1);
+									}
 								}
-								visibleTop++;
+								if (z == 1) {
+									mesh.setColor4f(0, 0, 1, 1);
+									// blue to the bottom
+								}
+								if (renderBottom(x, y, z)) {
+									setMeshColor(mesh, x, y - 1, z, false);
+									mesh.setTexture(grass.getBottomTexture());
+									mesh.addBottomQuad();
+									visibleBottom++;
+								}
+								if (renderTop(x, y, z)) {
+									if (x == 15 || z == 15) {
+										// debug: show through..
+									} else {
+										setMeshColor(mesh, x, y + 1, z, false);
+										mesh.setTexture(grass.getTopTexture());
+										mesh.addTopQuad();
+									}
+									visibleTop++;
+								}
+								if (renderLeft(x, y, z)) {
+									setMeshColor(mesh, x - 1, y, z, true);
+									mesh.setTexture(grass.getLeftTexture());
+									mesh.addLeftQuad();
+									visibleLeft++;
+								}
+								if (renderRight(x, y, z)) {
+									setMeshColor(mesh, x + 1, y, z, true);
+									mesh.setTexture(grass.getRightTexture());
+									mesh.addRightQuad();
+									visibleRight++;
+								}
+								if (renderBack(x, y, z)) {
+									setMeshColor(mesh, x, y, z - 1, true);
+									mesh.setTexture(grass.getBackTexture());
+									mesh.addBackQuad();
+									visibleBack++;
+								}
+								if (renderFront(x, y, z)) {
+									setMeshColor(mesh, x, y, z + 1, true);
+									mesh.setTexture(grass.getFrontTexture());
+									mesh.addFrontQuad();
+									visibleFront++;
+								}
+								// System.out.println("mesh not empty");
+							} else {
+								// System.out.println("mesh empty");
 							}
-							if (renderLeft(x, y, z)) {
-								setMeshColor(mesh, x - 1, y, z, true);
-								mesh.setTexture(grass.getLeftTexture());
-								mesh.addLeftQuad();
-								visibleLeft++;
-							}
-							if (renderRight(x, y, z)) {
-								setMeshColor(mesh, x + 1, y, z, true);
-								mesh.setTexture(grass.getRightTexture());
-								mesh.addRightQuad();
-								visibleRight++;
-							}
-							if (renderBack(x, y, z)) {
-								setMeshColor(mesh, x, y, z - 1, true);
-								mesh.setTexture(grass.getBackTexture());
-								mesh.addBackQuad();
-								visibleBack++;
-							}
-							if (renderFront(x, y, z)) {
-								setMeshColor(mesh, x, y, z + 1, true);
-								mesh.setTexture(grass.getFrontTexture());
-								mesh.addFrontQuad();
-								visibleFront++;
-							}
-							// System.out.println("mesh not empty");
-						} else {
-							// System.out.println("mesh empty");
+						} catch (ChunkUnavailableException e) {
+							e.printStackTrace();
 						}
 					}
 				}
@@ -265,7 +268,7 @@ public class Chunk extends BlockSlice {
 	// return provider.getBlockType(int x, int y, int z);
 	// }
 
-	public boolean isEmptyBlock(int x, int y, int z) {
+	public boolean isEmptyBlock(int x, int y, int z) throws ChunkUnavailableException {
 		return provider.isEmptyBlock(x, y, z);
 	}
 
@@ -277,27 +280,27 @@ public class Chunk extends BlockSlice {
 		return 15;
 	}
 
-	public boolean renderBottom(int x, int y, int z) {
+	public boolean renderBottom(int x, int y, int z) throws ChunkUnavailableException {
 		return provider.renderBottom(x, y, z);
 	}
 
-	public boolean renderTop(int x, int y, int z) {
+	public boolean renderTop(int x, int y, int z) throws ChunkUnavailableException {
 		return provider.renderTop(x, y, z);
 	}
 
-	public boolean renderLeft(int x, int y, int z) {
+	public boolean renderLeft(int x, int y, int z) throws ChunkUnavailableException {
 		return provider.renderLeft(x, y, z);
 	}
 
-	public boolean renderRight(int x, int y, int z) {
+	public boolean renderRight(int x, int y, int z) throws ChunkUnavailableException {
 		return provider.renderRight(x, y, z);
 	}
 
-	public boolean renderFront(int x, int y, int z) {
+	public boolean renderFront(int x, int y, int z) throws ChunkUnavailableException {
 		return provider.renderFront(x, y, z);
 	}
 
-	public boolean renderBack(int x, int y, int z) {
+	public boolean renderBack(int x, int y, int z) throws ChunkUnavailableException {
 		return provider.renderBack(x, y, z);
 	}
 

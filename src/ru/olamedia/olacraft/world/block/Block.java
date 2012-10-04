@@ -1,7 +1,11 @@
 package ru.olamedia.olacraft.world.block;
 
+import javax.vecmath.Vector3f;
+
+import ru.olamedia.camera.MatrixCamera;
 import ru.olamedia.olacraft.world.blockTypes.BlockType;
 import ru.olamedia.olacraft.world.blockTypes.EmptyBlockType;
+import ru.olamedia.olacraft.world.chunk.ChunkUnavailableException;
 import ru.olamedia.olacraft.world.provider.WorldProvider;
 
 public class Block {
@@ -76,7 +80,7 @@ public class Block {
 		this.z = z;
 	}
 
-	public boolean isEmpty() {
+	public boolean isEmpty() throws ChunkUnavailableException {
 		return provider.isEmptyBlock(x, y, z);
 	}
 
@@ -107,5 +111,76 @@ public class Block {
 			type = new EmptyBlockType();
 		}
 		return type;
+	}
+
+	public float getDistance(MatrixCamera cam) {
+		String nearest = "";
+		float topDistance = cam.intersectsRectangle(getTopLeftBack(), getTopLeftFront(), getTopRightFront(),
+				getTopRightBack());
+		float bottomDistance = cam.intersectsRectangle(getBottomLeftBack(), getBottomLeftFront(),
+				getBottomRightFront(), getBottomRightBack());
+		float leftDistance = cam.intersectsRectangle(getTopLeftBack(), getTopLeftFront(), getBottomLeftFront(),
+				getBottomLeftBack());
+		float rightDistance = cam.intersectsRectangle(getTopRightBack(), getTopRightFront(), getBottomRightFront(),
+				getBottomRightBack());
+		float frontDistance = cam.intersectsRectangle(getTopLeftFront(), getTopRightFront(), getBottomRightFront(),
+				getBottomLeftFront());
+		float backDistance = cam.intersectsRectangle(getTopLeftBack(), getTopRightBack(), getBottomRightBack(),
+				getBottomLeftBack());
+		float topBottom = Math.min(topDistance, bottomDistance);
+		float leftRight = Math.min(leftDistance, rightDistance);
+		float frontBack = Math.min(frontDistance, backDistance);
+		float distance = Math.min(Math.min(topBottom, leftRight), frontBack);
+		if (distance == bottomDistance) {
+			nearest = "BOTTOM";
+		}
+		if (distance == topDistance) {
+			nearest = "TOP";
+		}
+		if (distance == leftDistance) {
+			nearest = "LEFT";
+		}
+		if (distance == rightDistance) {
+			nearest = "RIGHT";
+		}
+		if (distance == frontDistance) {
+			nearest = "FRONT";
+		}
+		if (distance == backDistance) {
+			nearest = "BACK";
+		}
+		return distance;
+	}
+
+	private Vector3f getBottomRightBack() {
+		return new Vector3f(x + 0.5f, y - 0.5f, z - 0.5f);
+	}
+
+	private Vector3f getBottomRightFront() {
+		return new Vector3f(x + 0.5f, y - 0.5f, z + 0.5f);
+	}
+
+	private Vector3f getBottomLeftFront() {
+		return new Vector3f(x - 0.5f, y - 0.5f, z + 0.5f);
+	}
+
+	private Vector3f getBottomLeftBack() {
+		return new Vector3f(x - 0.5f, y - 0.5f, z - 0.5f);
+	}
+
+	private Vector3f getTopRightBack() {
+		return new Vector3f(x + 0.5f, y + 0.5f, z - 0.5f);
+	}
+
+	private Vector3f getTopLeftFront() {
+		return new Vector3f(x - 0.5f, y + 0.5f, z + 0.5f);
+	}
+
+	private Vector3f getTopRightFront() {
+		return new Vector3f(x + 0.5f, y + 0.5f, z + 0.5f);
+	}
+
+	private Vector3f getTopLeftBack() {
+		return new Vector3f(x - 0.5f, y + 0.5f, z - 0.5f);
 	}
 }

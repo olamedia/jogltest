@@ -8,6 +8,28 @@ import java.util.TimeZone;
 import ru.olamedia.astronomy.SunCalendar;
 
 public class GameTime {
+	public static class SunCalc {
+		private GameTime time;
+		private int r = 450;
+
+		public SunCalc(GameTime gameTime) {
+			this.time = gameTime;
+		}
+
+		public float getX() {
+			return (float) (Math.sin(Math.PI * time.getSunHA() / 180) * r);
+		}
+
+		public float getY() {
+			return (float) (Math.cos(Math.PI * time.getSunHA() / 180) * r);
+		}
+
+		public float getZ() {
+			return (float) (Math.sin(Math.PI * time.sunCalendar.getDeclination() / 180) * r);
+		}
+
+	}
+
 	public double longitude = 56.803698;
 	public double latitude = 60.635262;
 	public double gameSpeed = 60;// 1 real second is 60 seconds at game
@@ -35,6 +57,7 @@ public class GameTime {
 	public double sunHA; //
 	public double sunEA; //
 	public double sunTC; //
+	public SunCalc sun = new SunCalc(this);
 
 	public static double getSystemTime() {
 		return System.currentTimeMillis() / (double) (1000);
@@ -89,7 +112,7 @@ public class GameTime {
 
 		float[] spaceColors = new float[] { 0.03f, 0.03f, 0.05f }; // a little
 																	// blue
-		
+
 		clearColors = new float[] { 0.0f, 0.0f, 0.0f };
 
 		double crossAngle = sunCalendar.getHourAngle();
@@ -137,9 +160,19 @@ public class GameTime {
 			sunCalendar.update();
 			sunrise = Math.floor(sunCalendar.getSunrise() * 1000) / 1000;
 			sunset = Math.floor(sunCalendar.getSunset() * 1000) / 1000;
-			sunHA = sunCalendar.getHourAngle();
+			sunHA = sunCalendar.getHourAngle(); // Hour Angle is 0° at solar
+												// noon
 			sunEA = Math.floor(sunCalendar.getElevationAngle() * 1000) / 1000;
 			sunTC = Math.floor(sunCalendar.getTimeCorrectionFactor() * 1000) / 1000;
 		}
+	}
+
+	public float getSunHA() {
+		return (float) sunCalendar.getHourAngle(); // Hour Angle is 0° at solar
+													// noon
+	}
+
+	public float getSunEA() {
+		return (float) sunCalendar.getElevationAngle();
 	}
 }

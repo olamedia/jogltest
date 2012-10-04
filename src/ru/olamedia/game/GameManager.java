@@ -1,11 +1,16 @@
 package ru.olamedia.game;
 
+import java.nio.FloatBuffer;
 import java.util.Set;
 
 import javax.media.opengl.GL;
+import javax.media.opengl.GL2;
 import javax.media.opengl.GL2ES2;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLEventListener;
+import javax.media.opengl.GLUniformData;
+import javax.media.opengl.fixedfunc.GLMatrixFunc;
+import javax.media.opengl.glu.GLU;
 
 import ru.olamedia.olacraft.game.Game;
 import ru.olamedia.olacraft.network.discovery.DiscoveryThread;
@@ -16,6 +21,7 @@ import ru.olamedia.olacraft.world.location.BlockLocation;
 import ru.olamedia.tasks.TaskManager;
 
 import com.jogamp.opengl.JoglVersion;
+import com.jogamp.opengl.util.PMVMatrix;
 
 public class GameManager implements GLEventListener {
 	public static GameManager instance;
@@ -110,6 +116,48 @@ public class GameManager implements GLEventListener {
 		GameFrame.getFrame().getContentPane().add(menu);
 		menu.setVisible(true);
 		GameFrame.getFrame().validate();
+
+	}
+	private PMVMatrix m;
+	private void glTest(GLAutoDrawable drawable) {
+		// m = new PMVMatrix(true);
+		// m.glGetMviMatrixf();
+		// m.glMatrixMode(GLMatrixFunc.GL_PROJECTION);
+		// m.glLoadIdentity();
+		// m.gluPerspective(30, 1, 1, 100);
+		// m.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
+		// m.glLoadIdentity();
+		// m.glTranslatef(5, 6, 7);
+		// m.glRotatef(50, 0, 1, 0);
+		// m.glRotatef(30, 1, 0, 0);
+		// m.setDirty();
+		// m.update();
+		//
+		// GLUniformData pmvMatrixUniform = new GLUniformData("mgl_PMVMatrix",
+		// 4, 4, m.glGetPMvMatrixf());
+		//
+		// FloatBuffer pmv = m.glGetMviMatrixf();
+		// pmv = m.glGetPMatrixf();
+		// for (int i = 0; i < 16; i++) {
+		// System.out.println(pmv.get(i) + " == ");
+		// }
+		// GL2 gl = drawable.getGL().getGL2();
+		// gl.glMatrixMode(GLMatrixFunc.GL_PROJECTION);
+		// gl.glLoadIdentity();
+		// GLU glu = new GLU();
+		// glu.gluPerspective(30, 1, 1, 100);
+		// gl.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
+		// gl.glLoadIdentity();
+		// gl.glTranslatef(5, 6, 7);
+		// gl.glRotatef(50, 0, 1, 0);
+		// gl.glRotatef(30, 1, 0, 0);
+		//
+		// FloatBuffer glmv = FloatBuffer.allocate(16);
+		// gl.glGetFloatv(GLMatrixFunc.GL_MODELVIEW_MATRIX, glmv);
+		// for (int i = 0; i < 16; i++) {
+		// System.out.println(pmv.get(i) + " == " + glmv.get(i));
+		// }
+	//	System.exit(0);
 	}
 
 	public void start() {
@@ -167,6 +215,7 @@ public class GameManager implements GLEventListener {
 		System.err.println(Thread.currentThread() + " GL:" + gl);
 		System.err.println(Thread.currentThread() + " GL_VERSION=" + gl.glGetString(GL.GL_VERSION));
 		renderer.init(drawable);
+		glTest(drawable);
 	}
 
 	@Override

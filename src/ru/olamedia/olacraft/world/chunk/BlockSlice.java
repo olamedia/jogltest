@@ -1,15 +1,78 @@
 package ru.olamedia.olacraft.world.chunk;
 
+import java.util.Iterator;
+
+import ru.olamedia.camera.MatrixCamera;
+import ru.olamedia.olacraft.world.block.Block;
 import ru.olamedia.olacraft.world.location.BlockLocation;
 import ru.olamedia.olacraft.world.location.ChunkLocation;
 import ru.olamedia.olacraft.world.provider.WorldProvider;
 
-public class BlockSlice {
+public class BlockSlice implements Iterator<Block> {
 	protected WorldProvider provider;
 	protected BlockLocation offset;
 	protected int width;
 	protected int height;
 	protected int depth;
+
+	private int itX = 0;
+	private int itY = 0;
+	private int itZ = 0;
+
+	public Block getNearest(MatrixCamera cam) {
+		float notEmptyBlockDistance = Float.MAX_VALUE;
+		Block nearestBlock = null;
+		while (hasNext()) {
+			Block b = next();
+			try {
+				if (!b.isEmpty()) {
+					float d = b.getDistance(cam);
+					//System.out.print("d: " + d + " ");
+					if (d <= notEmptyBlockDistance) {
+						notEmptyBlockDistance = d;
+						nearestBlock = b;
+					}
+				}
+			} catch (ChunkUnavailableException e) {
+				e.printStackTrace();
+			}
+		}
+		return nearestBlock;
+	}
+
+	@Override
+	public boolean hasNext() {
+		itZ++;
+		if (itZ > depth) {
+			itY++;
+			itZ = 0;
+			if (itY > height) {
+				itX++;
+				itY = 0;
+				if (itX > width) {
+					itX = 0;
+					itY = 0;
+					itZ = 0;
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	@Override
+	public Block next() {
+		return getBlock(offset.x + itX, offset.y + itY, offset.z + itZ);
+	}
+
+	private Block getBlock(int x, int y, int z) {
+		return new Block(provider, x, y, z);
+	}
+
+	@Override
+	public void remove() {
+		// do nothing >_> why we have to remove block???
+	}
 
 	protected ChunkSlice chunkSlice;
 
@@ -133,5 +196,9 @@ public class BlockSlice {
 	@Override
 	public String toString() {
 		return this.getClass().getSimpleName() + "[" + offset + ";" + width + "x" + height + "x" + depth + "]";
+	}
+
+	public void setCenter(float x, float y, float z) {
+		setCenter((int) x, (int) y, (int) z);
 	}
 }
