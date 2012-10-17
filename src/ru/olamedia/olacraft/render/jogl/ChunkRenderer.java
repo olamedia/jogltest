@@ -1,7 +1,5 @@
 package ru.olamedia.olacraft.render.jogl;
 
-import javax.media.opengl.GLAutoDrawable;
-
 import ru.olamedia.Options;
 import ru.olamedia.geom.SimpleQuadMesh;
 import ru.olamedia.math.Box;
@@ -21,6 +19,8 @@ public class ChunkRenderer {
 		this.slice = slice;
 	}
 
+	public int testedChunks = 0;
+
 	public int visibleTop = 0;
 	public int visibleBottom = 0;
 	public int visibleLeft = 0;
@@ -32,20 +32,16 @@ public class ChunkRenderer {
 	public int frustumIntersectChunks = 0;
 
 	public boolean renderChunk(Chunk chunk, boolean skipnew) {
-
-		if (!chunk.isAvailable()) {
-			System.out.println("not available " + chunk);
-			chunk.request();
+		float d = (float) Math.sqrt(Math.pow(chunk.getOffset().x + 8 - cameraBlock.x, 2)
+				+ Math.pow(chunk.getOffset().y + 8 - cameraBlock.y, 2)
+				+ Math.pow(chunk.getOffset().z + 8 - cameraBlock.z, 2));
+		if (d > Options.renderDistance) {
 			return skipnew;
 		}
-
-		if (!chunk.isNeighborsAvailable()) {
-			System.out.println("not available " + chunk);
-			chunk.requestNeighbors();
+		testedChunks++;
+		if (!chunk.inWorldRange()) {
 			return skipnew;
 		}
-
-		// System.out.println("available");
 		Box box = new Box(chunk.getOffset().x, chunk.getOffset().y, chunk.getOffset().z, chunk.getOffset().x
 				+ chunk.getWidth(), chunk.getOffset().y + chunk.getHeight(), chunk.getOffset().z + chunk.getDepth());
 		if (Game.instance.camera.frustum.quickClassify(box) == Classifier.OUTSIDE) {
@@ -53,53 +49,74 @@ public class ChunkRenderer {
 			return skipnew;
 		}
 
-		// // boolean inside = true;
-		// if (Game.camera.frustum != null) {
-		// if (Game.camera.frustum.quickClassify(box) ==
-		// Classifier.Classification.OUTSIDE) {
-		// frustumCulledChunks++;
-		// return;
-		// }
-		// }
-		// } else if (Game.camera.frustum.test(box) == Classifier.INTERSECT) {
-		// inside = false;
-		// frustumIntersectChunks++;
-		// } else {
-		// frustumCulledChunks++;
-		// return;
-		// }
+		chunk.render();
 		if (!chunk.isMeshCostructed) {
-			if (skipnew) {
+			if (!chunk.isAvailable()) {
+				// System.out.println("not available " + chunk);
+				chunk.request();
 				return skipnew;
 			}
-		}
-		if (!chunk.isMeshCostructed) {
-			ChunkMeshBulder.instance.add(chunk);
-			if (ChunkMeshBulder.instance.isFull()) {
-				// System.out.println("queue is full, skipping");
-				skipnew = true;
+
+			if (!chunk.isNeighborsAvailable()) {
+				// System.out.println("not available " + chunk);
+				chunk.requestNeighbors();
+				return skipnew;
 			}
-			// System.out.println("not constructed");
+			// compute visibility
+
+			// System.out.println("available");
+
+			// // boolean inside = true;
+			// if (Game.camera.frustum != null) {
+			// if (Game.camera.frustum.quickClassify(box) ==
+			// Classifier.Classification.OUTSIDE) {
+			// frustumCulledChunks++;
+			// return;
+			// }
+			// }
+			// } else if (Game.camera.frustum.test(box) == Classifier.INTERSECT)
+			// {
+			// inside = false;
+			// frustumIntersectChunks++;
+			// } else {
+			// frustumCulledChunks++;
+			// return;
+			// }
+			if (!chunk.isMeshCostructed) {
+				if (skipnew) {
+					return skipnew;
+				}
+			}
+			if (!chunk.isMeshCostructed) {
+				ChunkMeshBulder.instance.add(chunk);
+				if (ChunkMeshBulder.instance.isFull()) {
+					// System.out.println("queue is full, skipping");
+					skipnew = true;
+				}
+				// System.out.println("not constructed");
+				return skipnew;
+			}
+
+			return skipnew;
+		} else {
 			return skipnew;
 		}
-		if (null == chunk.getMesh()) {
-			// System.out.println("mesh is null");
-			// skipnew = true;
-		} else {
-			SimpleQuadMesh mesh = chunk.getMesh();
-			// System.out.println("render " + chunk + " " +
-			// mesh.getVertexCount());
-			mesh.joglRender();
-		}
-		return skipnew;
 	}
 
-	public void render(GLAutoDrawable drawable) {
+	BlockLocation cameraBlock;
+	ChunkLocation cameraChunk;
+	int distance;
+	public ChunkSlice chunkSlice;
+
+	public void render() {
 
 		if (!ChunkMeshBulder.instance.isAlive() && !ChunkMeshBulder.instance.isInterrupted()) {
 			ChunkMeshBulder.instance.start();
 		}
-
+		if (null == chunkSlice) {
+			chunkSlice = slice.getChunkSlice();
+		}
+		testedChunks = 0;
 		visibleTop = 0;
 		visibleBottom = 0;
 		visibleLeft = 0;
@@ -107,164 +124,45 @@ public class ChunkRenderer {
 		visibleFront = 0;
 		visibleBack = 0;
 		frustumCulledChunks = 0;
+
+		cameraBlock = Game.client.getScene().getPlayer().getCameraBlockLocation();
+		cameraChunk = cameraBlock.getChunkLocation();
+		ChunkLocation renderLoc;
+
 		boolean skipnew = false;
-		ChunkSlice cs = slice.getChunkSlice();
-		for (int x = cs.getX(); x < cs.getX() + cs.getWidth(); x++) {
-			for (int z = cs.getZ(); z < cs.getZ() + cs.getDepth(); z++) {
-				for (int y = cs.getY(); y < cs.getY() + cs.getHeight(); y++) {
-					skipnew = renderChunk(cs.getChunk(new ChunkLocation(x, y, z)), skipnew);
+
+		for (distance = 0; distance <= Options.renderDistance / 16; distance++) {
+			if (distance > 0) {
+				int shortDistance = distance - 1;
+				renderLoc = new ChunkLocation(cameraChunk);
+				for (renderLoc.x = cameraChunk.x - distance; renderLoc.x <= cameraChunk.x + distance; renderLoc.x += distance * 2) {
+					// render ZY sides
+					for (renderLoc.y = cameraChunk.y - distance; renderLoc.y <= cameraChunk.y + distance; renderLoc.y++) {
+						for (renderLoc.z = cameraChunk.z - distance; renderLoc.z <= cameraChunk.z + distance; renderLoc.z++) {
+							skipnew = renderChunk(chunkSlice.getChunk(renderLoc), skipnew);
+						}
+					}
 				}
+				for (renderLoc.z = cameraChunk.z - distance; renderLoc.z <= cameraChunk.z + distance; renderLoc.z += distance * 2) {
+					// render XY sides
+					for (renderLoc.x = cameraChunk.x - shortDistance; renderLoc.x <= cameraChunk.x + shortDistance; renderLoc.x++) {
+						for (renderLoc.y = cameraChunk.y - distance; renderLoc.y <= cameraChunk.y + distance; renderLoc.y++) {
+							skipnew = renderChunk(chunkSlice.getChunk(renderLoc), skipnew);
+						}
+					}
+				}
+				for (renderLoc.y = cameraChunk.y - distance; renderLoc.y <= cameraChunk.y + distance; renderLoc.y += distance * 2) {
+					// render XZ sides
+					for (renderLoc.x = cameraChunk.x - shortDistance; renderLoc.x <= cameraChunk.x + shortDistance; renderLoc.x++) {
+						for (renderLoc.z = cameraChunk.z - shortDistance; renderLoc.z <= cameraChunk.z + shortDistance; renderLoc.z++) {
+							skipnew = renderChunk(chunkSlice.getChunk(renderLoc), skipnew);
+						}
+					}
+				}
+			} else {
+				renderLoc = new ChunkLocation(cameraChunk);
+				skipnew = renderChunk(chunkSlice.getChunk(renderLoc), skipnew);
 			}
 		}
-		if (true) {
-			return;
-		}
-		// rendering from center
-		int x, y, z;
-		int half = (Options.renderDistance / 16) / 2 + 1;
-		BlockLocation camera = new BlockLocation();
-		camera.x = (int) Game.client.getScene().getPlayer().getCameraX();
-		camera.y = (int) Game.client.getScene().getPlayer().getCameraY();
-		camera.z = (int) Game.client.getScene().getPlayer().getCameraZ();
-		ChunkLocation cameraChunk = camera.getChunkLocation();
-		int cx = cameraChunk.x;
-		int cy = cameraChunk.y;
-		int cz = cameraChunk.z;
-		ChunkLocation cLoc = new ChunkLocation(cx, cy, cz);
-		for (int r = 0; r <= half; r++) {
-			// +x
-			x = cx + r;
-			for (z = cz - r - 1; z <= cz + r; z++) {
-				for (y = cy - r - 1; y <= cy + r; y++) {
-					cLoc = new ChunkLocation(x, y, z);
-					skipnew = renderChunk(cs.getChunk(cLoc), skipnew);
-				}
-			}
-			// -x
-			x = cx - r - 1;
-			for (z = cz - r - 1; z <= cz + r; z++) {
-				for (y = cy - r - 1; y <= cy + r; y++) {
-					cLoc = new ChunkLocation(x, y, z);
-					skipnew = renderChunk(cs.getChunk(cLoc), skipnew);
-				}
-			}
-
-			// +z
-			z = cz + r;
-			for (x = cx - r - 1; x <= cz + r; x++) {
-				for (y = cy - r - 1; y <= cy + r; y++) {
-					cLoc = new ChunkLocation(x, y, z);
-					skipnew = renderChunk(cs.getChunk(cLoc), skipnew);
-				}
-			}
-			// -z
-			z = cz - r - 1;
-			for (x = cx - r - 1; x <= cz + r; x++) {
-				for (y = cy - r - 1; y <= cy + r; y++) {
-					cLoc = new ChunkLocation(x, y, z);
-					skipnew = renderChunk(cs.getChunk(cLoc), skipnew);
-				}
-			}
-			// +y
-			y = cy + r;
-			for (x = cx - r - 1; x <= cz + r; x++) {
-				for (z = cz - r - 1; z <= cz + r; z++) {
-					cLoc = new ChunkLocation(x, y, z);
-					skipnew = renderChunk(cs.getChunk(cLoc), skipnew);
-				}
-			}
-			// -y
-			y = cy - r - 1;
-			for (x = cx - r - 1; x <= cz + r; x++) {
-				for (z = cz - r - 1; z <= cz + r; z++) {
-					cLoc = new ChunkLocation(x, y, z);
-					skipnew = renderChunk(cs.getChunk(cLoc), skipnew);
-				}
-			}
-			if (skipnew) {
-				// break;
-			}
-			// break;
-		}
-
-		// int dw = cs.getWidth() / 2;
-		// int dd = cs.getDepth() / 2;
-		// int dh = cs.getHeight() / 2;
-		// for (int dx = 0; dx < dw; dx++) {
-		// x = cs.getX() + dw + dx;
-		// for (int dz = 0; dz < dd; dz++) {
-		// z = cs.getZ() + dd + dz;
-		// for (int dy = 0; dy < dh; dy++) {
-		// y = cs.getY() + dh + dy;
-		// skipnew = renderChunk(cs.getChunk(x, y, z), skipnew);
-		// y = cs.getY() + dh - dy - 1;
-		// skipnew = renderChunk(cs.getChunk(x, y, z), skipnew);
-		// }
-		// z = cs.getZ() + dd - dz - 1;
-		// for (int dy = 0; dy < dh; dy++) {
-		// y = cs.getY() + dh + dy;
-		// skipnew = renderChunk(cs.getChunk(x, y, z), skipnew);
-		// y = cs.getY() + dh - dy - 1;
-		// skipnew = renderChunk(cs.getChunk(x, y, z), skipnew);
-		// }
-		// }
-		// x = cs.getX() + dw - dx - 1;
-		// for (int dz = 0; dz < dd; dz++) {
-		// z = cs.getZ() + dd + dz;
-		// for (int dy = 0; dy < dh; dy++) {
-		// y = cs.getY() + dh + dy;
-		// int dd = cs.getDepth() / 2;
-		// int dh = cs.getHeight() / 2;
-		// for (int dx = 0; dx < dw; dx++) {
-		// x = cs.getX() + dw + dx;
-		// for (int dz = 0; dz < dd; dz++) {
-		// z = cs.getZ() + dd + dz;
-		// for (int dy = 0; dy < dh; dy++) {
-		// y = cs.getY() + dh + dy;
-		// skipnew = renderChunk(cs.getChunk(x, y, z), skipnew);
-		// y = cs.getY() + dh - dy - 1;
-		// skipnew = renderChunk(cs.getChunk(x, y, z), skipnew);
-		// }
-		// z = cs.getZ() + dd - dz - 1;
-		// for (int dy = 0; dy < dh; dy++) {
-		// y = cs.getY() + dh + dy;
-		// skipnew = renderChunk(cs.getChunk(x, y, z), skipnew);
-		// y = cs.getY() + dh - dy - 1;
-		// skipnew = renderChunk(cs.getChunk(x, y, z), skipnew);
-		// }
-		// }
-		// x = cs.getX() + dw - dx - 1;
-		// for (int dz = 0; dz < dd; dz++) {
-		// z = cs.getZ() + dd + dz;
-		// for (int dy = 0; dy < dh; dy++) {
-		// y = cs.getY() + dh + dy;
-		// skipnew = renderChunk(cs.getChunk(x, y, z), skipnew);
-		// y = cs.getY() + dh - dy - 1;
-		// skipnew = renderChunk(cs.getChunk(x, y, z), skipnew);
-		// }
-		// z = cs.getZ() + dd - dz - 1;
-		// for (int dy = 0; dy < dh; dy++) {
-		// y = cs.getY() + dh + dy;
-		// skipnew = renderChunk(cs.getChunk(x, y, z), skipnew);
-		// y = cs.getY() + dh - dy - 1;
-		// skipnew = renderChunk(cs.getChunk(x, y, z), skipnew);
-		// }
-		// }
-		// }
-		// skipnew = renderChunk(cs.getChunk(x, y, z), skipnew);
-		// y = cs.getY() + dh - dy - 1;
-		// skipnew = renderChunk(cs.getChunk(x, y, z), skipnew);
-		// }
-		// z = cs.getZ() + dd - dz - 1;
-		// for (int dy = 0; dy < dh; dy++) {
-		// y = cs.getY() + dh + dy;
-		// skipnew = renderChunk(cs.getChunk(x, y, z), skipnew);
-		// y = cs.getY() + dh - dy - 1;
-		// skipnew = renderChunk(cs.getChunk(x, y, z), skipnew);
-		// }
-		// }
-		// }
-
-		// System.out.println("visible top " + visibleTop);
 	}
 }

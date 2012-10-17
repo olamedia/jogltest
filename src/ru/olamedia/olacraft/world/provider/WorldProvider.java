@@ -3,7 +3,9 @@ package ru.olamedia.olacraft.world.provider;
 import ru.olamedia.olacraft.game.SpawnLocation;
 import ru.olamedia.olacraft.world.WorldInfo;
 import ru.olamedia.olacraft.world.block.Block;
-import ru.olamedia.olacraft.world.chunk.Chunk;
+import ru.olamedia.olacraft.world.block.BlockRegistry;
+import ru.olamedia.olacraft.world.blockTypes.AbstractBlockType;
+import ru.olamedia.olacraft.world.blockTypes.BlockType;
 import ru.olamedia.olacraft.world.chunk.ChunkUnavailableException;
 import ru.olamedia.olacraft.world.data.ChunkData;
 import ru.olamedia.olacraft.world.data.RegionData;
@@ -14,10 +16,15 @@ import ru.olamedia.olacraft.world.location.RegionLocation;
 
 public class WorldProvider {
 	private WorldInfo info = new WorldInfo();
+	private BlockRegistry typeRegistry = new BlockRegistry();
 	private AbstractChunkDataProvider dataProvider;
 
 	public WorldInfo getInfo() {
 		return info;
+	}
+	
+	public BlockRegistry getTypeRegistry(){
+		return typeRegistry;
 	}
 
 	public void setInfo(WorldInfo worldInfo) {
@@ -126,11 +133,14 @@ public class WorldProvider {
 	}
 
 	public Block getBlock(int x, int y, int z) {
-		BlockLocation blockLocation = new BlockLocation(x, y, z);
 		return new Block(this, x, y, z);
 	}
 
 	public ChunkData getChunk(ChunkLocation chunkLocation) {
 		return dataProvider.getChunk(chunkLocation);
+	}
+
+	public BlockType getBlockTypeById(int id) {
+		return typeRegistry.getBlockType(id);
 	}
 }

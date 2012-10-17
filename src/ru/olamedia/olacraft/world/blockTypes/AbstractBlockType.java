@@ -2,6 +2,8 @@ package ru.olamedia.olacraft.world.blockTypes;
 
 import com.jogamp.opengl.util.texture.Texture;
 
+import ru.olamedia.olacraft.world.block.BlockRegistry;
+import ru.olamedia.olacraft.world.provider.WorldProvider;
 import ru.olamedia.texture.TextureManager;
 
 public abstract class AbstractBlockType implements BlockType {
@@ -75,12 +77,13 @@ public abstract class AbstractBlockType implements BlockType {
 		return TextureManager.get(this.getBackTextureFile());
 	}
 	
-	public void register(){
+	public void register(WorldProvider provider){
 		getBackTexture();
 		getBottomTexture();
 		getFrontTexture();
 		getLeftTexture();
 		getRightTexture();
 		getTopTexture();
+		provider.getTypeRegistry().registerBlockType(this);
 	}
 }

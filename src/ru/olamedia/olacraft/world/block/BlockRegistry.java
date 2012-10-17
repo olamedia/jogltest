@@ -23,16 +23,13 @@ public class BlockRegistry {
 		return names.get(id);
 	}
 
-	public int registerBlockType(@SuppressWarnings("rawtypes") Class type) {
-		if (type.isInstance(BlockType.class)) {
-			autoincrement++;
-			int id = autoincrement;
-			String classId = type.getName();
-			names.put(id, classId);
-			// types.put(id, type);
-			return autoincrement;
-		}
-		return 0;
+	public int registerBlockType(BlockType type) {
+		autoincrement++;
+		int id = autoincrement;
+		String classId = type.getClass().getName();
+		names.put(id, classId);
+		types.put(id, type);
+		return autoincrement;
 	}
 
 	public BlockRegistry getWorldRegistry() {

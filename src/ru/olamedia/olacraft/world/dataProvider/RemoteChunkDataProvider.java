@@ -19,6 +19,7 @@ public class RemoteChunkDataProvider extends AbstractChunkDataProvider implement
 	private GameClient client;
 	private HashMap<String, RegionData> map = new HashMap<String, RegionData>();
 	private List<String> loading = new ArrayList<String>();
+	private List<RegionLocation> queue = new ArrayList<RegionLocation>();
 
 	public RemoteChunkDataProvider(GameClient client) {
 		this.client = client;
@@ -36,7 +37,7 @@ public class RemoteChunkDataProvider extends AbstractChunkDataProvider implement
 	@Override
 	public void loadRegion(RegionLocation regionLocation) {
 		String key = regionLocation.toString();
-		if (!loading.contains(key)) {
+		if (loading.isEmpty() && !loading.contains(key)) {
 			debug("loadRegion(" + key + ")");
 			loading.add(key);
 			client.send(new GetRegionPacket(regionLocation));

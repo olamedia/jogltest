@@ -16,6 +16,17 @@ import com.jogamp.opengl.util.GLArrayDataServer;
 import com.jogamp.opengl.util.texture.Texture;
 
 public class Mesh {
+	public void invalidate() {
+		buffer = null;
+		data = null;
+		vertexCount = 0;
+		data = new float[size * vertexSize];
+		// data = new float[size * vertexSize];
+		vertexPtr = 0;
+		useTexture = false;
+		useColor = false;
+	}
+
 	private FloatBuffer buffer;
 	private float[] data;
 	private int ptr;
@@ -63,14 +74,11 @@ public class Mesh {
 	private static boolean useQuad = true;
 	private static boolean useDisplayList = false;
 	private DisplayList DL;
+	private int size = 0;
 
 	public Mesh(int size) {
-		vertexCount = 0;
-		data = new float[size * vertexSize];
-		// data = new float[size * vertexSize];
-		vertexPtr = 0;
-		useTexture = false;
-		useColor = false;
+		this.size = size;
+		invalidate();
 	}
 
 	private static FloatBuffer generateFloatBuffer(int size) {
@@ -217,10 +225,15 @@ public class Mesh {
 			return;
 		}
 		GL glx = GLContext.getCurrentGL();
+		if (true){
+			GL2 gl = glx.getGL2();
+			gl.glShadeModel(GL2.GL_FLAT);
+		}
 		if (useVbo) {
 			GL2ES2 gl = glx.getGL2ES2();
-			//GL2 gl = glx.getGL2();
+			// GL2 gl = glx.getGL2();
 			for (Integer m : materials.keySet()) {
+				
 				gl.glEnable(GL.GL_TEXTURE_2D);
 				gl.glBindTexture(GL.GL_TEXTURE_2D, (int) m);
 				gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
@@ -228,10 +241,10 @@ public class Mesh {
 				arrays.get(m).enableBuffer(gl, true);
 				gl.glEnable(GL.GL_CULL_FACE);
 				gl.glEnable(GL.GL_DEPTH_TEST);
-				//gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL2.GL_FILL);
+				// gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL2.GL_FILL);
 				gl.glDrawArrays(GL2.GL_QUADS, 0, arrays.get(m).getElementCount());
 				arrays.get(m).enableBuffer(gl, false);
-				//System.exit(0);
+				// System.exit(0);
 			}
 		} else {
 			GL2 gl = glx.getGL2();

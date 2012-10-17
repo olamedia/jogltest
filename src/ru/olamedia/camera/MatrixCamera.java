@@ -10,8 +10,6 @@ import javax.media.opengl.fixedfunc.GLMatrixFunc;
 import javax.media.opengl.glu.GLU;
 import javax.vecmath.Vector3f;
 
-import org.openmali.FastMath;
-
 import ru.olamedia.olacraft.game.Game;
 import ru.olamedia.input.Keyboard;
 import ru.olamedia.math.Frustum;
@@ -24,6 +22,8 @@ public class MatrixCamera {
 	public PMVMatrix pmvMatrix = new PMVMatrix(true);
 	private boolean isDirty = true;
 	public GLUniformData pmvMatrixUniform;
+
+	public boolean isOrientationChanged = true;
 
 	protected float fov = 90f;
 	protected float aspect = 1f;
@@ -85,7 +85,7 @@ public class MatrixCamera {
 		ru.olamedia.math.Vector3f eyef = eye;// .translate(look, 1f);
 		nearc = eyef.translate(look, nearD);
 		ru.olamedia.math.Vector3f farc = eyef.translate(look, farD);
-		final float tang = FastMath.tan(FastMath.toRad(fov) / 2.0f);
+		final float tang = (float) Math.tan((Math.PI * fov / 180) / 2.0f);
 		float nh = nearD * tang * (isFrustumVisible ? 0.3f : 1);// zNear * tang;
 		float nw = nh * aspect * aspect;
 		float fh = farD * tang * (isFrustumVisible ? 0.5f : 1);// zNear * tang;
@@ -143,9 +143,11 @@ public class MatrixCamera {
 		edge1.sub(vertex2, vertex1);
 		edge2.sub(vertex3, vertex1);
 
+		Vector3f nlook = new Vector3f(look);
+		nlook.negate();
 		// Compute the determinant.
 		Vector3f directionCrossEdge2 = new Vector3f();
-		directionCrossEdge2.cross(look, edge2);
+		directionCrossEdge2.cross(nlook, edge2);
 
 		float determinant = directionCrossEdge2.dot(edge1);
 		// If the ray and triangle are parallel, there is no collision.
@@ -171,7 +173,7 @@ public class MatrixCamera {
 		Vector3f distanceCrossEdge1 = new Vector3f();
 		distanceCrossEdge1.cross(distanceVector, edge1);
 
-		float triangleV = look.dot(distanceCrossEdge1);
+		float triangleV = nlook.dot(distanceCrossEdge1);
 		triangleV *= inverseDeterminant;
 
 		// Make sure the V is inside the triangle.
@@ -231,6 +233,7 @@ public class MatrixCamera {
 		yaw = yaw % 360;
 		pitch = pitch % 360;
 		setDirty();
+		isOrientationChanged = true;
 	}
 
 	public void updateMouse() {

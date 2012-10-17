@@ -4,6 +4,7 @@ import javax.vecmath.Vector3f;
 
 import com.jogamp.newt.event.KeyEvent;
 
+import ru.olamedia.Options;
 import ru.olamedia.camera.Cameraman;
 import ru.olamedia.olacraft.game.Game;
 import ru.olamedia.olacraft.inventory.Inventory;
@@ -23,6 +24,7 @@ public class LiveEntity implements Cameraman {
 	private float z;
 	public Vector3f velocity = new Vector3f(0, 0, 0);
 	public Vector3f acceleration = new Vector3f(0, 0, 0);
+	public boolean isOrientationChanged = true;
 
 	private float fov = 90f;
 	private float mouseSpeed = 1.0f;
@@ -125,7 +127,13 @@ public class LiveEntity implements Cameraman {
 		boolean keyJump = Keyboard.isKeyDown("playerJump");
 		boolean keySneak = Keyboard.isKeyDown("playerSneak");
 		boolean keyCrouch = Keyboard.isKeyDown("playerCrouch");
-
+		boolean keyRenderDistance = Keyboard.isKeyDown("playerRenderDistance");
+		if (keyRenderDistance) {
+			Options.renderDistance *= 2;
+			if (Options.renderDistance > 256) {
+				Options.renderDistance = 32;
+			}
+		}
 		if (keySneak) {
 			if (!isSneaking) {
 				isSneaking = true;
@@ -391,7 +399,7 @@ public class LiveEntity implements Cameraman {
 			Game.client.getWorldProvider().loadChunk(loc.getChunkLocation());
 			return false;
 		}
-		
+
 		try {
 			return Game.client.getWorldProvider().isEmptyBlock((int) x + dx, (int) Math.ceil(y) + dy, (int) z + dz);
 		} catch (ChunkUnavailableException e) {
@@ -563,6 +571,7 @@ public class LiveEntity implements Cameraman {
 		// }
 		// }
 		if (isPositionChanged) {
+			isOrientationChanged = true;
 			notifyLocationUpdate();
 		}
 	}
@@ -625,6 +634,10 @@ public class LiveEntity implements Cameraman {
 		return y + getCameraLevel();
 	}
 
+	public BlockLocation getCameraBlockLocation() {
+		return new BlockLocation(x, y, z);
+	}
+
 	@Override
 	public float getCameraZ() {
 		return z;
@@ -640,6 +653,7 @@ public class LiveEntity implements Cameraman {
 		Keyboard.setName("playerJump", KeyEvent.VK_SPACE);
 		Keyboard.setName("playerSneak", KeyEvent.VK_SHIFT);
 		Keyboard.setName("playerCrouch", KeyEvent.VK_CONTROL);
+		Keyboard.setName("playerRenderDistance", KeyEvent.VK_F4);
 	}
 
 	public void setId(int id) {

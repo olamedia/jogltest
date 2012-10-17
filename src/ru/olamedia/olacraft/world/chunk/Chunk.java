@@ -1,7 +1,8 @@
 package ru.olamedia.olacraft.world.chunk;
 
 import ru.olamedia.geom.SimpleQuadMesh;
-import ru.olamedia.olacraft.world.blockTypes.GrassBlockType;
+import ru.olamedia.olacraft.world.blockTypes.BlockType;
+import ru.olamedia.olacraft.world.data.ChunkData;
 import ru.olamedia.olacraft.world.location.BlockLocation;
 import ru.olamedia.olacraft.world.location.ChunkLocation;
 import ru.olamedia.olacraft.world.provider.WorldProvider;
@@ -9,6 +10,8 @@ import ru.olamedia.olacraft.world.provider.WorldProvider;
 public class Chunk extends BlockSlice {
 	public boolean isMeshCostructed = false;
 	public SimpleQuadMesh mesh;
+	public boolean usePrevMesh = false;
+	public SimpleQuadMesh prevMesh;
 
 	public int visibleTop = 0;
 	public int visibleBottom = 0;
@@ -16,6 +19,25 @@ public class Chunk extends BlockSlice {
 	public int visibleRight = 0;
 	public int visibleFront = 0;
 	public int visibleBack = 0;
+
+	public void render() {
+		if (isMeshCostructed) {
+			mesh.joglRender();
+		} else if (usePrevMesh) {
+			prevMesh.joglRender();
+		}
+	}
+
+	public void invalidate() {
+		if (null != mesh) {
+			prevMesh = mesh;
+			usePrevMesh = true;
+			if (null != mesh) {
+				mesh.restart();
+			}
+		}
+		isMeshCostructed = false;
+	}
 
 	public Chunk(WorldProvider provider) {
 		super(provider, 16, 16, 16);
@@ -93,32 +115,51 @@ public class Chunk extends BlockSlice {
 	 * @return the mesh
 	 */
 	public SimpleQuadMesh getMesh() {
+		if (!isAvailable()) {
+			return null;
+		}
 		if (isMeshCostructed) {
 			return mesh;
 		}
-		if (offset.y > provider.getInfo().maxHeight) {
-			// isMeshCostructed = true;
-			// return null;
+		if (offset.y >= provider.getInfo().maxHeight) {
+			isMeshCostructed = true;
+			return null;
 		}
 		if (offset.y < provider.getInfo().minHeight) {
-			// isMeshCostructed = true;
-			// return null;
+			isMeshCostructed = true;
+			return null;
 		}
-		if (null == mesh) {
-			mesh = new SimpleQuadMesh(14739); // unindexed
+
+		if (null == mesh || mesh.restart) {
+			ChunkData data = provider.getChunk(offset.getChunkLocation());
+			data.computeVisibility(provider);
+			// max 14739
+			System.out.println(data.visibleCount + " vis");
+			mesh = new SimpleQuadMesh(14739);
+			//mesh = new SimpleQuadMesh(Math.min(data.visibleCount * 6, 14739));
+			mesh.start();
 			// 17x17x17
 			// vertices
 			mesh.useColor();
 			mesh.useTexture();
 			// gl.glHint(GL2.GL_PERSPECTIVE_CORRECTION_HINT, GL2.GL_FASTEST);
 			// gl.glHint(GL2.GL_LINE_SMOOTH_HINT, GL2.GL_NICEST);
-			GrassBlockType grass = new GrassBlockType();
-			for (int x = offset.x; x < offset.x + getWidth(); x++) {
-				for (int y = offset.y; y < offset.y + getHeight(); y++) {
-					for (int z = offset.z; z < offset.z + getDepth(); z++) {
+			BlockType grass;
+			for (int dx = 0; dx < 16; dx++) {
+				for (int dy = 0; dy < 16; dy++) {
+					for (int dz = 0; dz < 16; dz++) {
+						int x = offset.x + dx;
+						int y = offset.y + dy;
+						int z = offset.z + dz;
+						if (mesh.restart) {
+							return null;
+						}
 						//
 						try {
-							if (!isEmptyBlock(x, y, z)) {
+							int id = dx * 16 * 16 + dy * 16 + dz;
+							if (data.visible.get(id) && !data.emptyBlocks.get(id)) {
+								grass = provider.getTypeRegistry().getBlockType(
+										provider.getChunk((new BlockLocation(x, y, z)).getChunkLocation()).types[id]);
 								mesh.setTranslation(x, y, z);
 								// mesh.setColor4f(0, 1, 0, 1);
 								float cbase = (float) (y / 200.0) * (float) (7.0 / 10.0);
@@ -197,6 +238,7 @@ public class Chunk extends BlockSlice {
 				}
 			}
 			mesh.endMesh();
+			data.visible = null;
 			isMeshCostructed = true;
 			return null;
 		}
@@ -310,5 +352,9 @@ public class Chunk extends BlockSlice {
 
 	public void setLocation(ChunkLocation location) {
 		setLocation(location.getBlockLocation().x, location.getBlockLocation().y, location.getBlockLocation().z);
+	}
+
+	public boolean inWorldRange() {
+		return (offset.y + 16 < provider.getInfo().maxHeight) && (offset.y > provider.getInfo().minHeight);
 	}
 }

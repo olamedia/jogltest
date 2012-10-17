@@ -1,34 +1,73 @@
 package ru.olamedia.olacraft.world.block;
 
+import javax.media.opengl.GL2;
+import javax.media.opengl.GL2ES2;
+import javax.media.opengl.GLContext;
 import javax.vecmath.Vector3f;
 
 import ru.olamedia.camera.MatrixCamera;
+import ru.olamedia.olacraft.game.Game;
 import ru.olamedia.olacraft.world.blockTypes.BlockType;
 import ru.olamedia.olacraft.world.blockTypes.EmptyBlockType;
+import ru.olamedia.olacraft.world.chunk.Chunk;
 import ru.olamedia.olacraft.world.chunk.ChunkUnavailableException;
+import ru.olamedia.olacraft.world.data.ChunkData;
+import ru.olamedia.olacraft.world.location.BlockLocation;
 import ru.olamedia.olacraft.world.provider.WorldProvider;
 
 public class Block {
-	private WorldProvider provider;
-	private int x;
-	private int y;
-	private int z;
+	public WorldProvider provider;
+	public BlockLocation location = new BlockLocation();
+
+	public void removeFromWorld() {
+		ChunkData cdata = provider.getChunk(location.getChunkLocation());
+		cdata.setEmpty(location, true);
+		Chunk chunk = Game.client.getScene().blockRenderer.chunkSlice.getChunk(location.getChunkLocation());
+		chunk.invalidate();
+		if (location.isChunkEdge()) {
+			if (location.isChunkBackEdge()) {
+				Chunk neighbor = Game.client.getScene().blockRenderer.chunkSlice.getChunk(location.getChunkLocation()
+						.getBack());
+				neighbor.invalidate();
+			} else if (location.isChunkFrontEdge()) {
+				Chunk neighbor = Game.client.getScene().blockRenderer.chunkSlice.getChunk(location.getChunkLocation()
+						.getFront());
+				neighbor.invalidate();
+			} else if (location.isChunkLeftEdge()) {
+				Chunk neighbor = Game.client.getScene().blockRenderer.chunkSlice.getChunk(location.getChunkLocation()
+						.getLeft());
+				neighbor.invalidate();
+			} else if (location.isChunkRightEdge()) {
+				Chunk neighbor = Game.client.getScene().blockRenderer.chunkSlice.getChunk(location.getChunkLocation()
+						.getRight());
+				neighbor.invalidate();
+			} else if (location.isChunkTopEdge()) {
+				Chunk neighbor = Game.client.getScene().blockRenderer.chunkSlice.getChunk(location.getChunkLocation()
+						.getTop());
+				neighbor.invalidate();
+			} else if (location.isChunkBottomEdge()) {
+				Chunk neighbor = Game.client.getScene().blockRenderer.chunkSlice.getChunk(location.getChunkLocation()
+						.getBottom());
+				neighbor.invalidate();
+			}
+		}
+	}
 
 	/**
 	 * Inventory block
 	 */
 	public Block() {
 		this.provider = null;
-		this.x = 0;
-		this.y = 0;
-		this.z = 0;
+		location.x = 0;
+		location.y = 0;
+		location.z = 0;
 	}
 
 	public void putIntoWorld(WorldProvider worldProvider, int x, int y, int z) {
 		this.provider = worldProvider;
-		this.x = x;
-		this.y = y;
-		this.z = z;
+		location.x = x;
+		location.y = y;
+		location.z = z;
 	}
 
 	public Block(WorldProvider worldProvider, int x, int y, int z) {
@@ -39,7 +78,7 @@ public class Block {
 	 * @return the x
 	 */
 	public int getX() {
-		return x;
+		return location.x;
 	}
 
 	/**
@@ -47,14 +86,14 @@ public class Block {
 	 *            the x to set
 	 */
 	public void setX(int x) {
-		this.x = x;
+		location.x = x;
 	}
 
 	/**
 	 * @return the y
 	 */
 	public int getY() {
-		return y;
+		return location.y;
 	}
 
 	/**
@@ -62,14 +101,14 @@ public class Block {
 	 *            the y to set
 	 */
 	public void setY(int y) {
-		this.y = y;
+		location.y = y;
 	}
 
 	/**
 	 * @return the z
 	 */
 	public int getZ() {
-		return z;
+		return location.z;
 	}
 
 	/**
@@ -77,15 +116,15 @@ public class Block {
 	 *            the z to set
 	 */
 	public void setZ(int z) {
-		this.z = z;
+		location.z = z;
 	}
 
 	public boolean isEmpty() throws ChunkUnavailableException {
-		return provider.isEmptyBlock(x, y, z);
+		return provider.isEmptyBlock(location.x, location.y, location.z);
 	}
 
 	public Block getNeighbor(int dx, int dy, int dz) {
-		return new Block(provider, x + dx, y + dy, z + dz);
+		return new Block(provider, location.x + dx, location.y + dy, location.z + dz);
 	}
 
 	public Block[] getNeighbors() {
@@ -153,34 +192,178 @@ public class Block {
 	}
 
 	private Vector3f getBottomRightBack() {
-		return new Vector3f(x + 0.5f, y - 0.5f, z - 0.5f);
+		return new Vector3f(location.x + 0.5f, location.y - 0.5f, location.z - 0.5f);
 	}
 
 	private Vector3f getBottomRightFront() {
-		return new Vector3f(x + 0.5f, y - 0.5f, z + 0.5f);
+		return new Vector3f(location.x + 0.5f, location.y - 0.5f, location.z + 0.5f);
 	}
 
 	private Vector3f getBottomLeftFront() {
-		return new Vector3f(x - 0.5f, y - 0.5f, z + 0.5f);
+		return new Vector3f(location.x - 0.5f, location.y - 0.5f, location.z + 0.5f);
 	}
 
 	private Vector3f getBottomLeftBack() {
-		return new Vector3f(x - 0.5f, y - 0.5f, z - 0.5f);
+		return new Vector3f(location.x - 0.5f, location.y - 0.5f, location.z - 0.5f);
 	}
 
 	private Vector3f getTopRightBack() {
-		return new Vector3f(x + 0.5f, y + 0.5f, z - 0.5f);
+		return new Vector3f(location.x + 0.5f, location.y + 0.5f, location.z - 0.5f);
 	}
 
 	private Vector3f getTopLeftFront() {
-		return new Vector3f(x - 0.5f, y + 0.5f, z + 0.5f);
+		return new Vector3f(location.x - 0.5f, location.y + 0.5f, location.z + 0.5f);
 	}
 
 	private Vector3f getTopRightFront() {
-		return new Vector3f(x + 0.5f, y + 0.5f, z + 0.5f);
+		return new Vector3f(location.x + 0.5f, location.y + 0.5f, location.z + 0.5f);
 	}
 
 	private Vector3f getTopLeftBack() {
-		return new Vector3f(x - 0.5f, y + 0.5f, z - 0.5f);
+		return new Vector3f(location.x - 0.5f, location.y + 0.5f, location.z - 0.5f);
+	}
+
+	public void request() {
+		provider.loadChunk(location.getChunkLocation());
+	}
+
+	public void renderFrame() {
+		GL2 gl = GLContext.getCurrentGL().getGL2();
+		gl.glDisable(GL2.GL_TEXTURE_2D);
+		gl.glEnable(GL2.GL_DEPTH_TEST);
+		gl.glEnable(GL2.GL_LINE_SMOOTH);
+		gl.glEnable(GL2.GL_POLYGON_SMOOTH);
+		gl.glHint(GL2.GL_LINE_SMOOTH_HINT, GL2.GL_NICEST);
+		gl.glHint(GL2.GL_POLYGON_SMOOTH_HINT, GL2.GL_NICEST);
+		// gl.glEnable(GL2.GL_BLEND); // Enable Blending
+		// gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
+		gl.glPolygonMode(GL2.GL_FRONT_AND_BACK, GL2.GL_FILL);
+		float min = 0.505f;
+		float max = 0.495f;
+		gl.glBegin(GL2.GL_QUADS);
+		{
+			gl.glColor4f(0, 0, 0, 0.8f);
+			// top: right
+			gl.glVertex3f(location.x + min, location.y + min, location.z + min);
+			gl.glVertex3f(location.x + min, location.y + min, location.z - min);
+			gl.glVertex3f(location.x + max, location.y + min, location.z - min);
+			gl.glVertex3f(location.x + max, location.y + min, location.z + min);
+			// top: left
+			gl.glVertex3f(location.x - min, location.y + min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y + min, location.z - min);
+			gl.glVertex3f(location.x - max, location.y + min, location.z - min);
+			gl.glVertex3f(location.x - max, location.y + min, location.z + min);
+			// top: back
+			gl.glVertex3f(location.x + min, location.y + min, location.z - min);
+			gl.glVertex3f(location.x - min, location.y + min, location.z - min);
+			gl.glVertex3f(location.x - min, location.y + min, location.z - max);
+			gl.glVertex3f(location.x + min, location.y + min, location.z - max);
+			// top: front
+			gl.glVertex3f(location.x + min, location.y + min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y + min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y + min, location.z + max);
+			gl.glVertex3f(location.x + min, location.y + min, location.z + max);
+			// bottom: right
+			gl.glVertex3f(location.x + min, location.y - min, location.z + min);
+			gl.glVertex3f(location.x + min, location.y - min, location.z - min);
+			gl.glVertex3f(location.x + max, location.y - min, location.z - min);
+			gl.glVertex3f(location.x + max, location.y - min, location.z + min);
+			// bottom: left
+			gl.glVertex3f(location.x - min, location.y - min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y - min, location.z - min);
+			gl.glVertex3f(location.x - max, location.y - min, location.z - min);
+			gl.glVertex3f(location.x - max, location.y - min, location.z + min);
+			// bottom: back
+			gl.glVertex3f(location.x + min, location.y - min, location.z - min);
+			gl.glVertex3f(location.x - min, location.y - min, location.z - min);
+			gl.glVertex3f(location.x - min, location.y - min, location.z - max);
+			gl.glVertex3f(location.x + min, location.y - min, location.z - max);
+			// bottom: front
+			gl.glVertex3f(location.x + min, location.y - min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y - min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y - min, location.z + max);
+			gl.glVertex3f(location.x + min, location.y - min, location.z + max);
+			// front: right
+			gl.glVertex3f(location.x + min, location.y + min, location.z + min);
+			gl.glVertex3f(location.x + min, location.y - min, location.z + min);
+			gl.glVertex3f(location.x + max, location.y - min, location.z + min);
+			gl.glVertex3f(location.x + max, location.y + min, location.z + min);
+			// front: left
+			gl.glVertex3f(location.x - min, location.y + min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y - min, location.z + min);
+			gl.glVertex3f(location.x - max, location.y - min, location.z + min);
+			gl.glVertex3f(location.x - max, location.y + min, location.z + min);
+			// front: bottom
+			gl.glVertex3f(location.x + min, location.y - min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y - min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y - max, location.z + min);
+			gl.glVertex3f(location.x + min, location.y - max, location.z + min);
+			// front: top
+			gl.glVertex3f(location.x + min, location.y + min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y + min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y + max, location.z + min);
+			gl.glVertex3f(location.x + min, location.y + max, location.z + min);
+			// back: right
+			gl.glVertex3f(location.x + min, location.y + min, location.z - min);
+			gl.glVertex3f(location.x + min, location.y - min, location.z - min);
+			gl.glVertex3f(location.x + max, location.y - min, location.z - min);
+			gl.glVertex3f(location.x + max, location.y + min, location.z - min);
+			// back: left
+			gl.glVertex3f(location.x - min, location.y + min, location.z - min);
+			gl.glVertex3f(location.x - min, location.y - min, location.z - min);
+			gl.glVertex3f(location.x - max, location.y - min, location.z - min);
+			gl.glVertex3f(location.x - max, location.y + min, location.z - min);
+			// back: bottom
+			gl.glVertex3f(location.x + min, location.y - min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y - min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y - max, location.z + min);
+			gl.glVertex3f(location.x + min, location.y - max, location.z + min);
+			// back: top
+			gl.glVertex3f(location.x + min, location.y + min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y + min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y + max, location.z + min);
+			gl.glVertex3f(location.x + min, location.y + max, location.z + min);
+			// left: back
+			gl.glVertex3f(location.x - min, location.y + min, location.z - min);
+			gl.glVertex3f(location.x - min, location.y - min, location.z - min);
+			gl.glVertex3f(location.x - min, location.y - min, location.z - max);
+			gl.glVertex3f(location.x - min, location.y + min, location.z - max);
+			// left: front
+			gl.glVertex3f(location.x - min, location.y + min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y - min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y - min, location.z + max);
+			gl.glVertex3f(location.x - min, location.y + min, location.z + max);
+			// left: top
+			gl.glVertex3f(location.x - min, location.y + min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y + min, location.z - min);
+			gl.glVertex3f(location.x - min, location.y + max, location.z - min);
+			gl.glVertex3f(location.x - min, location.y + max, location.z + min);
+			// left: bottom
+			gl.glVertex3f(location.x - min, location.y - min, location.z + min);
+			gl.glVertex3f(location.x - min, location.y - min, location.z - min);
+			gl.glVertex3f(location.x - min, location.y - max, location.z - min);
+			gl.glVertex3f(location.x - min, location.y - max, location.z + min);
+			// right: back
+			gl.glVertex3f(location.x + min, location.y + min, location.z - min);
+			gl.glVertex3f(location.x + min, location.y - min, location.z - min);
+			gl.glVertex3f(location.x + min, location.y - min, location.z - max);
+			gl.glVertex3f(location.x + min, location.y + min, location.z - max);
+			// right: front
+			gl.glVertex3f(location.x + min, location.y + min, location.z + min);
+			gl.glVertex3f(location.x + min, location.y - min, location.z + min);
+			gl.glVertex3f(location.x + min, location.y - min, location.z + max);
+			gl.glVertex3f(location.x + min, location.y + min, location.z + max);
+			// right: top
+			gl.glVertex3f(location.x + min, location.y + min, location.z + min);
+			gl.glVertex3f(location.x + min, location.y + min, location.z - min);
+			gl.glVertex3f(location.x + min, location.y + max, location.z - min);
+			gl.glVertex3f(location.x + min, location.y + max, location.z + min);
+			// right: bottom
+			gl.glVertex3f(location.x + min, location.y - min, location.z + min);
+			gl.glVertex3f(location.x + min, location.y - min, location.z - min);
+			gl.glVertex3f(location.x + min, location.y - max, location.z - min);
+			gl.glVertex3f(location.x + min, location.y - max, location.z + min);
+		}
+		gl.glEnd();
 	}
 }

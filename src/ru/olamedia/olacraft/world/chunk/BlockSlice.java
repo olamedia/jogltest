@@ -34,7 +34,8 @@ public class BlockSlice implements Iterator<Block> {
 					}
 				}
 			} catch (ChunkUnavailableException e) {
-				e.printStackTrace();
+				//e.printStackTrace();
+				b.request();
 			}
 		}
 		return nearestBlock;

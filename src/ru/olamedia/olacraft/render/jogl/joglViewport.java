@@ -16,9 +16,11 @@ public class joglViewport {
 	}
 
 	public void drawText(String text, int x, int y) {
-		sans11.setColor(1, 1, 1, 0.7f);
+		sans11.setColor(0, 0, 0, 0.7f);
 		sans11.beginRendering(drawable.getWidth(), drawable.getHeight());
-		sans11.draw(text, x, y);
+		sans11.draw(text, x - 1, y - 1);
+		// sans11.setColor(1, 1, 1, 0.7f);
+		// sans11.draw(text, x, y);
 		sans11.endRendering();
 	}
 }

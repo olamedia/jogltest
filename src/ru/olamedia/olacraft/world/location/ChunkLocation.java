@@ -17,6 +17,12 @@ public class ChunkLocation implements Serializable {
 		this.z = z;
 	}
 
+	public ChunkLocation(ChunkLocation loc) {
+		this.x = loc.x;
+		this.y = loc.y;
+		this.z = loc.z;
+	}
+
 	public int x;
 	public int y;
 	public int z;
@@ -41,5 +47,33 @@ public class ChunkLocation implements Serializable {
 
 	public BlockLocation getBlockLocation() {
 		return new BlockLocation(Chunk.rev(x), Chunk.rev(y) - 128, Chunk.rev(z));
+	}
+
+	public ChunkLocation getNeighbor(int dx, int dy, int dz) {
+		return new ChunkLocation(x + dx, y + dy, z + dz);
+	}
+
+	public ChunkLocation getLeft() {
+		return getNeighbor(-1, 0, 0);
+	}
+
+	public ChunkLocation getRight() {
+		return getNeighbor(1, 0, 0);
+	}
+
+	public ChunkLocation getTop() {
+		return getNeighbor(0, 1, 0);
+	}
+
+	public ChunkLocation getBottom() {
+		return getNeighbor(0, -1, 0);
+	}
+
+	public ChunkLocation getBack() {
+		return getNeighbor(0, 0, -1);
+	}
+
+	public ChunkLocation getFront() {
+		return getNeighbor(0, 0, 1);
 	}
 }

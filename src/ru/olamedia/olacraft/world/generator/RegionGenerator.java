@@ -1,5 +1,6 @@
 package ru.olamedia.olacraft.world.generator;
 
+import ru.olamedia.olacraft.world.chunk.Chunk;
 import ru.olamedia.olacraft.world.data.ChunkData;
 import ru.olamedia.olacraft.world.data.HeightMap;
 import ru.olamedia.olacraft.world.data.RegionData;
@@ -68,7 +69,10 @@ public class RegionGenerator {
 										// System.out.println("not empty, height: "
 										// + height);
 									}
+									int id = Chunk.in(blockOffset.x) * 16 * 16 + Chunk.in(blockOffset.y) * 16
+											+ Chunk.in(blockOffset.z);
 									chunk.setEmpty(blockOffset, false);
+									chunk.types[id] = (byte) (1 + Math.random() * 4);
 								}
 							}
 						}

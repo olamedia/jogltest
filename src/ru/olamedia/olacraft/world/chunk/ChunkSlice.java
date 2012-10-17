@@ -21,20 +21,41 @@ public class ChunkSlice {
 	}
 
 	protected HashMap<String, Chunk> chunks = new HashMap<String, Chunk>();
+	protected HashMap<Integer, HashMap<Integer, HashMap<Integer, Chunk>>> iChunks = new HashMap<Integer, HashMap<Integer, HashMap<Integer, Chunk>>>();
 
 	public Chunk getChunk(ChunkLocation location) {
-		int x = location.x;
-		int y = location.y;
-		int z = location.z;
-		String key = x + ";" + y + ";" + z;
-		if (chunks.containsKey(key)) {
-			return chunks.get(key);
+		// int x = location.x;
+		// int y = location.y;
+		// int z = location.z;
+		// String key = x + ";" + y + ";" + z;
+		if (iChunks.containsKey(location.x)) {
+			if (iChunks.get(location.x).containsKey(location.y)) {
+				if (iChunks.get(location.x).get(location.y).containsKey(location.z)) {
+					return iChunks.get(location.x).get(location.y).get(location.z);
+				} else {
+
+				}
+			} else {
+				iChunks.get(location.x).put(location.y, new HashMap<Integer, Chunk>());
+			}
 		} else {
-			Chunk chunk = new Chunk(provider);
-			chunk.setLocation(location);
-			chunks.put(key, chunk);
-			return chunk;
+			iChunks.put(location.x, new HashMap<Integer, HashMap<Integer, Chunk>>());
+			iChunks.get(location.x).put(location.y, new HashMap<Integer, Chunk>());
 		}
+
+		Chunk chunk = new Chunk(provider);
+		chunk.setLocation(location);
+		// chunks.put(key, chunk);
+		iChunks.get(location.x).get(location.y).put(location.z, chunk);
+		return chunk;
+		// if (chunks.containsKey(key)) {
+		// return chunks.get(key);
+		// } else {
+		// Chunk chunk = new Chunk(provider);
+		// chunk.setLocation(location);
+		// chunks.put(key, chunk);
+		// return chunk;
+		// }
 	}
 
 	/**
@@ -108,6 +129,7 @@ public class ChunkSlice {
 	public int getZ() {
 		return offset.z;
 	}
+
 	public void setLocation(ChunkLocation chunkOffset) {
 		offset = chunkOffset;
 	}

@@ -131,7 +131,9 @@ public class GameTime {
 			spaceLightIsInvalid = true;
 			receivedLightIsInvalid = true;
 		}
-		float[] sunSkyColors = new float[] { 0.5f, 0.7f, 1f };
+		//float[] sunSkyColors = new float[] { (float) 179 / 255, (float) 195 / 255, (float) 184 / 255 };
+		//float[] sunSkyColors = new float[] { (float) 209 / 255, (float) 227 / 255, (float) 251 / 255 };
+		float[] sunSkyColors = new float[] { (float) 203 / 255, (float) 233 / 255, (float) 244 / 255 };
 		for (int i = 0; i < 3; i++) {
 			clearColors[i] = addComponent(sunSkyColors[i] * (float) sunlightFactor, spaceColors[i]);
 		}

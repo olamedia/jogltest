@@ -4,7 +4,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 public class ChunkMeshBulder extends Thread {
 	public static ChunkMeshBulder instance = new ChunkMeshBulder("Mesh builder");
-	private ArrayBlockingQueue<Chunk> chunks = new ArrayBlockingQueue<Chunk>(16);
+	private ArrayBlockingQueue<Chunk> chunks = new ArrayBlockingQueue<Chunk>(256);
 
 	public ChunkMeshBulder(String name) {
 		super(name);
@@ -36,6 +36,9 @@ public class ChunkMeshBulder extends Thread {
 			// main loop
 			try {
 				tick();
+				if (chunks.isEmpty()){
+					Thread.sleep(50);
+				}
 				// Thread.sleep(10); // or wait/join etc
 			} catch (InterruptedException ex) {
 				// cleanup here

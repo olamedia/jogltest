@@ -2,6 +2,16 @@ package ru.olamedia.geom;
 
 public class SimpleQuadMesh extends Mesh {
 
+	public boolean restart = true;
+
+	public void restart() {
+		restart = true;
+	}
+
+	public void start() {
+		restart = false;
+	}
+
 	public SimpleQuadMesh(int size) {
 		super(size * 4);
 	}
@@ -109,7 +119,5 @@ public class SimpleQuadMesh extends Mesh {
 		setUV(1, 0);
 		addBottomRightFrontVertex();
 	}
-
-	
 
 }

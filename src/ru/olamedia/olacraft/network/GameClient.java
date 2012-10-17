@@ -25,7 +25,6 @@ import ru.olamedia.olacraft.network.packet.WorldInfoPacket;
 import ru.olamedia.olacraft.scene.GameScene;
 import ru.olamedia.olacraft.world.WorldInfo;
 import ru.olamedia.olacraft.world.dataProvider.CachedChunkDataProvider;
-import ru.olamedia.olacraft.world.dataProvider.LocalChunkDataProvider;
 import ru.olamedia.olacraft.world.dataProvider.RemoteChunkDataProvider;
 import ru.olamedia.olacraft.world.provider.WorldProvider;
 
@@ -33,7 +32,7 @@ public class GameClient extends ConnectionStateListener implements IPacketListen
 	private WorldProvider worldProvider;
 	private GameScene scene;
 
-	private Client client = new Client(10 * 1024 * 1024, 10 * 1024 * 1024);
+	private Client client = new Client(10 * 1024 * 1024, 30 * 1024 * 1024);
 	private String hostname = "127.0.0.1";
 
 	@Override
@@ -65,7 +64,8 @@ public class GameClient extends ConnectionStateListener implements IPacketListen
 		// INIT WORLD
 		worldProvider = new WorldProvider();
 		worldProvider.setChunkDataProvider(new CachedChunkDataProvider(new RemoteChunkDataProvider(this)));
-		//worldProvider.setChunkDataProvider(new CachedChunkDataProvider(new LocalChunkDataProvider(worldProvider.getInfo().name)));
+		// worldProvider.setChunkDataProvider(new CachedChunkDataProvider(new
+		// LocalChunkDataProvider(worldProvider.getInfo().name)));
 		// CREATE SCENE
 		scene = new GameScene(worldProvider);
 		Kryo kryo = client.getKryo();

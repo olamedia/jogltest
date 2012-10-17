@@ -26,6 +26,7 @@ import com.jogamp.newt.event.KeyAdapter;
 import com.jogamp.newt.event.KeyEvent;
 import com.jogamp.newt.opengl.GLWindow;
 import com.jogamp.opengl.util.Animator;
+import com.jogamp.opengl.util.FPSAnimator;
 
 public class GameFrame {
 	// java.awt.SystemTray
@@ -66,7 +67,8 @@ public class GameFrame {
 			glWindow.confinePointer(false);
 			glWindow.addWindowListener(new QuitAdapter());
 			animator = new Animator(glWindow);
-			animator.setRunAsFastAsPossible(true); // By default there is a
+			//animator = new FPSAnimator(glWindow, 60);
+			//animator.setRunAsFastAsPossible(true); // By default there is a
 													// brief
 													// pause in the animation
 													// loop
