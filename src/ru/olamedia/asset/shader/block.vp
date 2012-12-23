@@ -9,9 +9,9 @@ attribute vec4 mesh_colors;
 
 attribute vec2 mesh_texCoord;
 
-invariant out vec4 position;
+varying out vec4 position;
 vec4 color;
-smooth out vec2 texCoord;
+varying out vec2 texCoord;
 
 void main(void)
 {

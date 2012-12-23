@@ -1,6 +1,6 @@
 
 
-smooth in vec2 texCoord;
+varying in vec2 texCoord;
 //vec4 frontColor;
 
 uniform sampler2D mesh_ActiveTexture;
