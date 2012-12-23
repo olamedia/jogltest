@@ -4,28 +4,19 @@ import java.io.Serializable;
 
 import ru.olamedia.olacraft.world.chunk.Chunk;
 
-public class ChunkLocation implements Serializable {
+public class ChunkLocation extends Location3i implements Serializable {
 	private static final long serialVersionUID = -3620722885522274470L;
 
-	public ChunkLocation() {
-
-	}
-
 	public ChunkLocation(int x, int y, int z) {
-		this.x = x;
-		this.y = y;
-		this.z = z;
+		super(x, y, z);
 	}
 
-	public ChunkLocation(ChunkLocation loc) {
-		this.x = loc.x;
-		this.y = loc.y;
-		this.z = loc.z;
+	public ChunkLocation(Location3i cameraChunk) {
+		super(cameraChunk);
 	}
 
-	public int x;
-	public int y;
-	public int z;
+	public ChunkLocation() {
+	}
 
 	public SectorLocation getSectorLocation() {
 		return new SectorLocation(x, z);

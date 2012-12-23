@@ -4,21 +4,24 @@ import javax.vecmath.Vector3f;
 
 import com.jogamp.newt.event.KeyEvent;
 
-import ru.olamedia.Options;
 import ru.olamedia.camera.Cameraman;
+import ru.olamedia.camera.MatrixCamera;
 import ru.olamedia.olacraft.game.Game;
 import ru.olamedia.olacraft.inventory.Inventory;
-import ru.olamedia.olacraft.network.GameClient;
-import ru.olamedia.olacraft.scene.GameScene;
 import ru.olamedia.olacraft.world.block.Block;
 import ru.olamedia.olacraft.world.blockStack.BlockStack;
 import ru.olamedia.olacraft.world.blockTypes.GravelBlockType;
 import ru.olamedia.olacraft.world.chunk.ChunkUnavailableException;
 import ru.olamedia.olacraft.world.location.BlockLocation;
+import ru.olamedia.player.RuntimeSettings;
+import ru.olamedia.input.KeyListener;
 import ru.olamedia.input.Keyboard;
 
-public class LiveEntity implements Cameraman {
-	private Inventory inventory; // every living entity can have inventory
+public class LiveEntity implements Cameraman, KeyListener {
+	public MatrixCamera camera;
+	public MatrixCamera thirdPerson = new MatrixCamera();
+	public RuntimeSettings settings = new RuntimeSettings();
+	protected Inventory inventory; // every living entity can have inventory
 	private float x;
 	private float y;
 	private float z;
@@ -40,7 +43,7 @@ public class LiveEntity implements Cameraman {
 	private float walkSpeed = 1.3f;// 1.3-1.5 m/s
 	private float runSpeed = 4.5f;// m/s
 
-	private boolean isWalking = false;
+	protected boolean isWalking = false;
 	private boolean isRunning = false;
 	private boolean isSneaking = false;
 	private boolean isCrouching = false;
@@ -67,8 +70,6 @@ public class LiveEntity implements Cameraman {
 	protected void generateInventory() {
 		// can be overriden for mobs
 		for (int i = 0; i <= 9; i++) {
-			inventory.binded[i] = new BlockStack(new Block(), (int) Math.random() * 64);
-			inventory.binded[i].block.setType(new GravelBlockType());
 		}
 	}
 
@@ -108,7 +109,7 @@ public class LiveEntity implements Cameraman {
 	}
 
 	public boolean isEmptyUnderFoot() throws ChunkUnavailableException {
-		return isEmptyBlock(0, -1, 0);
+		return canMoveThrough(0, -1, 0);
 	}
 
 	/**
@@ -128,11 +129,38 @@ public class LiveEntity implements Cameraman {
 		boolean keySneak = Keyboard.isKeyDown("playerSneak");
 		boolean keyCrouch = Keyboard.isKeyDown("playerCrouch");
 		boolean keyRenderDistance = Keyboard.isKeyDown("playerRenderDistance");
+		if (Keyboard.isKeyDown("playerInventory1")) {
+			inventory.select(0);
+		}
+		if (Keyboard.isKeyDown("playerInventory2")) {
+			inventory.select(1);
+		}
+		if (Keyboard.isKeyDown("playerInventory3")) {
+			inventory.select(2);
+		}
+		if (Keyboard.isKeyDown("playerInventory4")) {
+			inventory.select(3);
+		}
+		if (Keyboard.isKeyDown("playerInventory5")) {
+			inventory.select(4);
+		}
+		if (Keyboard.isKeyDown("playerInventory6")) {
+			inventory.select(5);
+		}
+		if (Keyboard.isKeyDown("playerInventory7")) {
+			inventory.select(6);
+		}
+		if (Keyboard.isKeyDown("playerInventory8")) {
+			inventory.select(7);
+		}
+		if (Keyboard.isKeyDown("playerInventory9")) {
+			inventory.select(8);
+		}
+		if (Keyboard.isKeyDown("playerInventory0")) {
+			inventory.select(9);
+		}
 		if (keyRenderDistance) {
-			Options.renderDistance *= 2;
-			if (Options.renderDistance > 256) {
-				Options.renderDistance = 32;
-			}
+
 		}
 		if (keySneak) {
 			if (!isSneaking) {
@@ -393,15 +421,17 @@ public class LiveEntity implements Cameraman {
 
 	}
 
-	public boolean isEmptyBlock(int dx, int dy, int dz) {
-		BlockLocation loc = new BlockLocation((int) x + dx, (int) Math.ceil(y) + dy, (int) z + dz);
-		if (!Game.client.getWorldProvider().isChunkAvailable(loc.getChunkLocation())) {
-			Game.client.getWorldProvider().loadChunk(loc.getChunkLocation());
+	BlockLocation testLoc = new BlockLocation();
+
+	public boolean canMoveThrough(int dx, int dy, int dz) {
+		testLoc.set((int) x + dx, (int) Math.ceil(y) + dy, (int) z + dz);
+		if (!Game.client.getWorldProvider().isChunkAvailable(testLoc.getChunkLocation())) {
+			Game.client.getWorldProvider().loadChunk(testLoc.getChunkLocation());
 			return false;
 		}
 
 		try {
-			return Game.client.getWorldProvider().isEmptyBlock((int) x + dx, (int) Math.ceil(y) + dy, (int) z + dz);
+			return Game.client.getWorldProvider().canMoveThrough((int) x + dx, (int) Math.ceil(y) + dy, (int) z + dz);
 		} catch (ChunkUnavailableException e) {
 			e.printStackTrace();
 			return false;
@@ -409,11 +439,11 @@ public class LiveEntity implements Cameraman {
 	}
 
 	public boolean haveBlockUnder(int dy) throws ChunkUnavailableException {
-		return !isEmptyBlock(0, -dy, 0);
+		return !canMoveThrough(0, -dy, 0);
 	}
 
 	public boolean inAir() throws ChunkUnavailableException {
-		if (!isEmptyBlock(0, -1, 0)) {
+		if (!canMoveThrough(0, -1, 0)) {
 			if (y > getBlock(0, -1, 0).getY() + 0.5f) {
 				return true;
 			}
@@ -455,24 +485,28 @@ public class LiveEntity implements Cameraman {
 
 	public boolean hasValidPosition(Block head, boolean checkTop, boolean checkBottom) throws ChunkUnavailableException {
 		// Check if we're too near to the wall
-		Block[] LRNeighbors = { head.getNeighbor(-1, 0, 0), head.getNeighbor(1, 0, 0) };
-		for (Block n : LRNeighbors) {
-			if (n.isEmpty()) {
-				continue;
-			}
-			if (Math.abs(n.getX() - x) < 0.5) {
-				return false;
-			}
-		}
-		Block[] FBNeighbors = { head.getNeighbor(0, 0, -1), head.getNeighbor(0, 0, 1) };
-		for (Block n : FBNeighbors) {
-			if (n.isEmpty()) {
-				continue;
-			}
-			if (Math.abs(n.getZ() - z) < 0.5) {
-				return false;
-			}
-		}
+		/*
+		 * Block[] LRNeighbors = { head.getNeighbor(-1, 0, 0),
+		 * head.getNeighbor(1, 0, 0) };
+		 * for (Block n : LRNeighbors) {
+		 * if (!n.canMoveThrough()) {
+		 * return false;
+		 * }
+		 * if (Math.abs(n.getX() - x) < 0.5) {
+		 * return false;
+		 * }
+		 * }
+		 * Block[] FBNeighbors = { head.getNeighbor(0, 0, -1),
+		 * head.getNeighbor(0, 0, 1) };
+		 * for (Block n : FBNeighbors) {
+		 * if (!n.canMoveThrough()) {
+		 * return false;
+		 * }
+		 * if (Math.abs(n.getZ() - z) < 0.5) {
+		 * return false;
+		 * }
+		 * }
+		 */
 		// if (checkBottom) {
 		// Block n = head.getNeighbor(0, -1, 0);
 		// if (Math.abs(n.getY() - y) < 0.5) {
@@ -485,7 +519,7 @@ public class LiveEntity implements Cameraman {
 		// return false;
 		// }
 		// }
-		return head.isEmpty();
+		return head.canMoveThrough();
 	}
 
 	public boolean hasValidPosition() throws ChunkUnavailableException {
@@ -493,7 +527,7 @@ public class LiveEntity implements Cameraman {
 		Block underFoot = getBlock(0, -1, 0);
 		Block head = getBlock(0, (int) getHeight(), 0);
 		if (!inJump) {
-			if (underFoot.isEmpty()) {
+			if (underFoot.canMoveThrough()) {
 				// In AIR while normal walking
 				if (isSneaking) {
 					// TODO Jumping while Sneaking fixes x,z while jumping
@@ -510,6 +544,9 @@ public class LiveEntity implements Cameraman {
 		if (hasValidPosition()) {
 			backupPosition();
 			isPositionChanged = true;
+			if (null != camera) {
+				camera.setDirty();
+			}
 			return true;
 		}
 		restorePosition();
@@ -557,8 +594,8 @@ public class LiveEntity implements Cameraman {
 		if (y < -20) {
 			// spawnAt((int) x, (int) z);
 		}
-		pitch = Game.instance.camera.getPitch();
-		yaw = Game.instance.camera.getYaw();
+		setPitch(Game.instance.camera.getPitch());
+		setYaw(Game.instance.camera.getYaw());
 		// Game.camera.setRoll(roll);
 		// saveTrace();
 		// if (isWalking && onGround) {
@@ -573,6 +610,9 @@ public class LiveEntity implements Cameraman {
 		if (isPositionChanged) {
 			isOrientationChanged = true;
 			notifyLocationUpdate();
+			if (null != camera) {
+				camera.setDirty();
+			}
 		}
 	}
 
@@ -634,8 +674,11 @@ public class LiveEntity implements Cameraman {
 		return y + getCameraLevel();
 	}
 
+	private BlockLocation cameraBlockLocation = new BlockLocation();
+
 	public BlockLocation getCameraBlockLocation() {
-		return new BlockLocation(x, y, z);
+		cameraBlockLocation.set(x, y, z);
+		return cameraBlockLocation;
 	}
 
 	@Override
@@ -654,7 +697,24 @@ public class LiveEntity implements Cameraman {
 		Keyboard.setName("playerSneak", KeyEvent.VK_SHIFT);
 		Keyboard.setName("playerCrouch", KeyEvent.VK_CONTROL);
 		Keyboard.setName("playerRenderDistance", KeyEvent.VK_F4);
+		Keyboard.setName("playerInventory1", KeyEvent.VK_1);
+		Keyboard.setName("playerInventory2", KeyEvent.VK_2);
+		Keyboard.setName("playerInventory3", KeyEvent.VK_3);
+		Keyboard.setName("playerInventory4", KeyEvent.VK_4);
+		Keyboard.setName("playerInventory5", KeyEvent.VK_5);
+		Keyboard.setName("playerInventory6", KeyEvent.VK_6);
+		Keyboard.setName("playerInventory7", KeyEvent.VK_7);
+		Keyboard.setName("playerInventory8", KeyEvent.VK_8);
+		Keyboard.setName("playerInventory9", KeyEvent.VK_9);
+		Keyboard.setName("playerInventory0", KeyEvent.VK_0);
+		Keyboard.setName("playerInventoryToggle", KeyEvent.VK_E);
+		if (!isListeningControls) {
+			isListeningControls = true;
+			Keyboard.attach(this);
+		}
 	}
+
+	private boolean isListeningControls = false;
 
 	public void setId(int id) {
 		this.id = id;
@@ -670,5 +730,61 @@ public class LiveEntity implements Cameraman {
 
 	public void setConnectionId(int connectionId) {
 		this.connectionId = connectionId;
+	}
+
+	@Override
+	public void onKeyPressed(String name, KeyEvent e) {
+		if (name.equals("playerInventoryToggle")) {
+			inventory.toggleGUI();
+		}
+		if (name.equals("playerRenderDistance")) {
+			settings.renderDistance *= 2;
+			if (settings.renderDistance > 256) {
+				settings.renderDistance = 32;
+			}
+		}
+
+	}
+
+	@Override
+	public void onKeyReleased(String name, KeyEvent e) {
+
+	}
+
+	@Override
+	public MatrixCamera getCamera() {
+		return camera;
+	}
+
+	@Override
+	public void setCamera(MatrixCamera camera) {
+		this.camera = camera;
+		if (null != camera) {
+			// thirdPerson.attachTo(this.camera, false);
+		}
+	}
+
+	public float getPitch() {
+		return pitch;
+	}
+
+	public void setPitch(float pitch) {
+		this.pitch = pitch;
+	}
+
+	public float getYaw() {
+		return yaw;
+	}
+
+	public void setYaw(float yaw) {
+		this.yaw = yaw;
+	}
+
+	public float getRoll() {
+		return roll;
+	}
+
+	public void setRoll(float roll) {
+		this.roll = roll;
 	}
 }

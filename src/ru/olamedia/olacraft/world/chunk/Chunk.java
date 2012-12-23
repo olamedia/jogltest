@@ -1,7 +1,8 @@
 package ru.olamedia.olacraft.world.chunk;
 
+import ru.olamedia.geom.ChunkMesh;
 import ru.olamedia.geom.SimpleQuadMesh;
-import ru.olamedia.olacraft.world.blockTypes.BlockType;
+import ru.olamedia.olacraft.world.blockRenderer.ChunkRenderer;
 import ru.olamedia.olacraft.world.data.ChunkData;
 import ru.olamedia.olacraft.world.location.BlockLocation;
 import ru.olamedia.olacraft.world.location.ChunkLocation;
@@ -9,9 +10,7 @@ import ru.olamedia.olacraft.world.provider.WorldProvider;
 
 public class Chunk extends BlockSlice {
 	public boolean isMeshCostructed = false;
-	public SimpleQuadMesh mesh;
 	public boolean usePrevMesh = false;
-	public SimpleQuadMesh prevMesh;
 
 	public int visibleTop = 0;
 	public int visibleBottom = 0;
@@ -19,28 +18,21 @@ public class Chunk extends BlockSlice {
 	public int visibleRight = 0;
 	public int visibleFront = 0;
 	public int visibleBack = 0;
+	public ChunkLocation location;
 
-	public void render() {
-		if (isMeshCostructed) {
-			mesh.joglRender();
-		} else if (usePrevMesh) {
-			prevMesh.joglRender();
-		}
+	public ChunkMesh mesh = new ChunkMesh();
+
+	public void render(int pass) {
+		mesh.render(pass);
 	}
 
 	public void invalidate() {
-		if (null != mesh) {
-			prevMesh = mesh;
-			usePrevMesh = true;
-			if (null != mesh) {
-				mesh.restart();
-			}
-		}
-		isMeshCostructed = false;
+		mesh.setValid(false);
 	}
 
-	public Chunk(WorldProvider provider) {
+	public Chunk(WorldProvider provider, ChunkLocation location) {
 		super(provider, 16, 16, 16);
+		setLocation(location);
 	}
 
 	/**
@@ -98,159 +90,78 @@ public class Chunk extends BlockSlice {
 		// }
 	}
 
-	public void setMeshColor(SimpleQuadMesh mesh, int x, int y, int z, boolean isSide) {
-		float level = 1f;// ((float) getProvider().getBlockLightLevel(x, y, z) -
-							// (isSide ? 2 : 0)) / 15.0f;
-		mesh.setColor4f(level, level, level, 1);
-		if (y < 0) {
-			mesh.setColor4f(0, 0, 1, 1);
-		} else if (y > 30) {
-			mesh.setColor4f(1, 1, 1, 1);
+	public void setMeshBrightness(ChunkData origin, ChunkData data, short id, boolean side) {
+		// data.calculateVoidLight(provider);
+		// float[] sunlight = Game.client.getScene().time.getClearColor();
+		// byte lv = data.getVoidLight(id);
+		// light = lightValues[lv];
+		// if (side && lv > 0) {
+		// light = lightValues[lv - 1];
+		// }
+		// lightR = light;// * sunlight[0];
+		// lightG = light;// * sunlight[1];
+		// lightB = light;// * sunlight[2];
+	}
+
+	public void setMeshBrightness(SimpleQuadMesh mesh, int x, int y, int z, ChunkData data, boolean side) {
+		if (x < 0) {
+			setMeshBrightness(data, provider.getChunk(data.location.getLeft()), ChunkData.ClampID(x, y, z), side);
+		} else if (x > 15) {
+			setMeshBrightness(data, provider.getChunk(data.location.getRight()), ChunkData.ClampID(x, y, z), side);
+		} else if (y < 0) {
+			setMeshBrightness(data, provider.getChunk(data.location.getBottom()), ChunkData.ClampID(x, y, z), side);
+		} else if (y > 15) {
+			setMeshBrightness(data, provider.getChunk(data.location.getTop()), ChunkData.ClampID(x, y, z), side);
+		} else if (z < 0) {
+			setMeshBrightness(data, provider.getChunk(data.location.getBack()), ChunkData.ClampID(x, y, z), side);
+		} else if (z > 15) {
+			setMeshBrightness(data, provider.getChunk(data.location.getFront()), ChunkData.ClampID(x, y, z), side);
 		} else {
-			mesh.setColor4f(1, 1, 0, 1);
+			setMeshBrightness(data, data, ChunkData.ID(x, y, z), side);
+		}
+	}
+
+	private float light = 0f;
+	private float lightR = 0f;
+	private float lightG = 0f;
+	private float lightB = 0f;
+	private static float[] lightValues = new float[] {//
+	0.035f, // 0.035184372f, 0
+			0.043980465f, // 1
+			0.054975581f, // 2
+			0.068719477f, // 3
+			0.085899346f, // 4
+			0.107374182f, // 5
+			0.134217728f, // 6
+			0.16777216f, // 7
+			0.2097152f, // 8
+			0.262144f, // 9
+			0.32768f, // 10
+			0.4096f, // 11
+			0.512f, // 12
+			0.64f, // 13
+			0.8f, // 14
+			1f // 15
+	};
+
+	public void setMeshColor(SimpleQuadMesh mesh, int x, int y, int z, boolean isSide) {
+		mesh.setColor4f(lightR, lightG, lightB, 1);
+		if (y < 0) {
+			// mesh.setColor4f(0, 0, 1, 1);
+		} else if (y > 30) {
+			// mesh.setColor4f(1, 1, 1, 1);
+		} else {
+			// mesh.setColor4f(1, 1, 0, 1);
 		}
 	}
 
 	/**
 	 * @return the mesh
 	 */
-	public SimpleQuadMesh getMesh() {
-		if (!isAvailable()) {
-			return null;
+	public void getMesh() {
+		if (!mesh.isCompiled()) {
+			ChunkRenderer.compile(this);
 		}
-		if (isMeshCostructed) {
-			return mesh;
-		}
-		if (offset.y >= provider.getInfo().maxHeight) {
-			isMeshCostructed = true;
-			return null;
-		}
-		if (offset.y < provider.getInfo().minHeight) {
-			isMeshCostructed = true;
-			return null;
-		}
-
-		if (null == mesh || mesh.restart) {
-			ChunkData data = provider.getChunk(offset.getChunkLocation());
-			data.computeVisibility(provider);
-			// max 14739
-			System.out.println(data.visibleCount + " vis");
-			mesh = new SimpleQuadMesh(14739);
-			//mesh = new SimpleQuadMesh(Math.min(data.visibleCount * 6, 14739));
-			mesh.start();
-			// 17x17x17
-			// vertices
-			mesh.useColor();
-			mesh.useTexture();
-			// gl.glHint(GL2.GL_PERSPECTIVE_CORRECTION_HINT, GL2.GL_FASTEST);
-			// gl.glHint(GL2.GL_LINE_SMOOTH_HINT, GL2.GL_NICEST);
-			BlockType grass;
-			for (int dx = 0; dx < 16; dx++) {
-				for (int dy = 0; dy < 16; dy++) {
-					for (int dz = 0; dz < 16; dz++) {
-						int x = offset.x + dx;
-						int y = offset.y + dy;
-						int z = offset.z + dz;
-						if (mesh.restart) {
-							return null;
-						}
-						//
-						try {
-							int id = dx * 16 * 16 + dy * 16 + dz;
-							if (data.visible.get(id) && !data.emptyBlocks.get(id)) {
-								grass = provider.getTypeRegistry().getBlockType(
-										provider.getChunk((new BlockLocation(x, y, z)).getChunkLocation()).types[id]);
-								mesh.setTranslation(x, y, z);
-								// mesh.setColor4f(0, 1, 0, 1);
-								float cbase = (float) (y / 200.0) * (float) (7.0 / 10.0);
-								if (cbase > 9 / 10) {
-									cbase = (float) (9.0 / 10.0);
-								}
-								// cbase = (float) (9.0 / 10.0);
-								float cred, cgreen, cblue;
-								// cbase;
-								cred = cgreen = cblue = getLightLevel256(x, y, z);
-								if (x == 1) {
-									mesh.setColor4f(1, 0, 0, 1);
-									// red to the right
-								}
-								if (x == 0 || z == 0) {
-									if (y == 6) {
-										mesh.setColor4f(1, 0, 0, 1);
-									} else if (y % 2 == 0) {
-										mesh.setColor4f(1, 0, 1, 1);
-									} else {
-										mesh.setColor4f(1, 1, 0, 1);
-									}
-								}
-								if (z == 1) {
-									mesh.setColor4f(0, 0, 1, 1);
-									// blue to the bottom
-								}
-								if (renderBottom(x, y, z)) {
-									setMeshColor(mesh, x, y - 1, z, false);
-									mesh.setTexture(grass.getBottomTexture());
-									mesh.addBottomQuad();
-									visibleBottom++;
-								}
-								if (renderTop(x, y, z)) {
-									if (x == 15 || z == 15) {
-										// debug: show through..
-									} else {
-										setMeshColor(mesh, x, y + 1, z, false);
-										mesh.setTexture(grass.getTopTexture());
-										mesh.addTopQuad();
-									}
-									visibleTop++;
-								}
-								if (renderLeft(x, y, z)) {
-									setMeshColor(mesh, x - 1, y, z, true);
-									mesh.setTexture(grass.getLeftTexture());
-									mesh.addLeftQuad();
-									visibleLeft++;
-								}
-								if (renderRight(x, y, z)) {
-									setMeshColor(mesh, x + 1, y, z, true);
-									mesh.setTexture(grass.getRightTexture());
-									mesh.addRightQuad();
-									visibleRight++;
-								}
-								if (renderBack(x, y, z)) {
-									setMeshColor(mesh, x, y, z - 1, true);
-									mesh.setTexture(grass.getBackTexture());
-									mesh.addBackQuad();
-									visibleBack++;
-								}
-								if (renderFront(x, y, z)) {
-									setMeshColor(mesh, x, y, z + 1, true);
-									mesh.setTexture(grass.getFrontTexture());
-									mesh.addFrontQuad();
-									visibleFront++;
-								}
-								// System.out.println("mesh not empty");
-							} else {
-								// System.out.println("mesh empty");
-							}
-						} catch (ChunkUnavailableException e) {
-							e.printStackTrace();
-						}
-					}
-				}
-			}
-			mesh.endMesh();
-			data.visible = null;
-			isMeshCostructed = true;
-			return null;
-		}
-		return mesh;
-	}
-
-	/**
-	 * @param mesh
-	 *            the mesh to set
-	 */
-	public void setMesh(SimpleQuadMesh mesh) {
-		this.mesh = mesh;
 	}
 
 	public boolean isEmpty() {
@@ -352,9 +263,22 @@ public class Chunk extends BlockSlice {
 
 	public void setLocation(ChunkLocation location) {
 		setLocation(location.getBlockLocation().x, location.getBlockLocation().y, location.getBlockLocation().z);
+		this.location = new ChunkLocation(location);
 	}
 
 	public boolean inWorldRange() {
 		return (offset.y + 16 < provider.getInfo().maxHeight) && (offset.y > provider.getInfo().minHeight);
+	}
+
+	public boolean meshInvalid = false;
+
+	public void markMeshInvalid() {
+		if (isMeshCostructed) {
+			meshInvalid = true;
+		}
+	}
+
+	public ChunkData getData() {
+		return provider.getChunk(location);
 	}
 }

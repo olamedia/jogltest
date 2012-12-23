@@ -83,48 +83,50 @@ public class LocalChunkDataProvider extends AbstractChunkDataProvider {
 	@SuppressWarnings("unused")
 	@Override
 	public RegionData getRegion(RegionLocation regionLocation) {
-		String filename = path + File.separator + regionLocation.getFilename();
-		RegionData data = null;
-		if (true) {
-			return generateRegion(regionLocation);
-		}
-		File chunkFile = new File(filename);
-		if (false && chunkFile.exists()) {
-			InputStream in;
-			try {
-				FileInputStream fIn = new FileInputStream(chunkFile);
-				in = new GZIPInputStream(fIn);
-				data = RegionData.loadFrom(in);
-				in.close();
-				fIn.close();
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			}
-		} else {
-			data = generateRegion(regionLocation);
-			OutputStream out;
-			try {
-				chunkFile.createNewFile();
-				FileOutputStream fOut = new FileOutputStream(chunkFile);
-				out = new GZIPOutputStream(fOut);
-				data.writeTo(out);
-				out.close();
-				fOut.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		return data;
+		// String filename = path + File.separator +
+		// regionLocation.getFilename();
+		// RegionData data = null;
+		return generateRegion(regionLocation);
+		// File chunkFile = new File(filename);
+		// if (false && chunkFile.exists()) {
+		// InputStream in;
+		// try {
+		// FileInputStream fIn = new FileInputStream(chunkFile);
+		// in = new GZIPInputStream(fIn);
+		// data = RegionData.loadFrom(in);
+		// in.close();
+		// fIn.close();
+		// } catch (FileNotFoundException e) {
+		// e.printStackTrace();
+		// } catch (IOException e) {
+		// e.printStackTrace();
+		// } catch (ClassNotFoundException e) {
+		// e.printStackTrace();
+		// }
+		// } else {
+		// data = generateRegion(regionLocation);
+		// OutputStream out;
+		// try {
+		// chunkFile.createNewFile();
+		// FileOutputStream fOut = new FileOutputStream(chunkFile);
+		// out = new GZIPOutputStream(fOut);
+		// data.writeTo(out);
+		// out.close();
+		// fOut.close();
+		// } catch (IOException e) {
+		// e.printStackTrace();
+		// }
+		// }
+		// return data;
 	}
 
+	RegionGenerator generator;
+
 	public RegionData generateRegion(RegionLocation regionLocation) {
-		RegionData data = new RegionData();
+		final RegionData data = new RegionData();
 		data.location = regionLocation;
 		RegionGenerator generator = new RegionGenerator();
+		generator.setTypes(types);
 		try {
 			generator.setSeed(getSeed());
 		} catch (IOException e) {

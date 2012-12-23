@@ -51,8 +51,8 @@ public class InventoryRenderer {
 		BlockStack stack = inventory.binded[i];
 		int sx = x + padding + stackSize * i + spacing * i;
 		int sy = y + padding;
-		if (null != stack && !(stack.block.getType() instanceof EmptyBlockType)) {
-			Texture tex = TextureManager.get(stack.block.getType().getStackTextureFile());
+		if (null != stack && !(stack.type instanceof EmptyBlockType)) {
+			Texture tex = TextureManager.get(stack.type.getStackTextureFile());
 			if (null != tex) {
 				tex.bind(gl);
 				gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);

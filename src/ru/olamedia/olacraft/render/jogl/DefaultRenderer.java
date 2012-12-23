@@ -1,6 +1,9 @@
 package ru.olamedia.olacraft.render.jogl;
 
+import java.util.Random;
+
 import com.jogamp.newt.event.KeyEvent;
+import com.jogamp.newt.event.MouseEvent;
 
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.glu.GLU;
@@ -22,9 +25,14 @@ public class DefaultRenderer implements IRenderer, KeyListener, MouseListener {
 		MouseJail.attach(this);
 	}
 
+	private Random rand = new Random();
+
 	@Override
 	public void render(GLAutoDrawable drawable) {
+		Game.instance.fpsTimer.update();
+		// if (rand.nextFloat() > 0.8f) {
 		Game.client.getScene().tick();
+		// }
 		Game.client.getScene().render(drawable);
 	}
 
@@ -48,14 +56,6 @@ public class DefaultRenderer implements IRenderer, KeyListener, MouseListener {
 		if (name == "toggleFrustum") {
 			Game.instance.camera.isFrustumVisible = !Game.instance.camera.isFrustumVisible;
 		}
-		if (name == "toggleRenderDistance") {
-			int renderDistance = Game.client.getScene().getRenderDistance();
-			renderDistance *= 2;
-			if (renderDistance > 256) {
-				renderDistance = 32;
-			}
-			Game.client.getScene().setRenderDistance(renderDistance);
-		}
 	}
 
 	@Override
@@ -64,12 +64,19 @@ public class DefaultRenderer implements IRenderer, KeyListener, MouseListener {
 	}
 
 	@Override
-	public void onMouseClick() {
-		Game.instance.player.onMouseClick();
+	public void onMouseClick(MouseEvent e) {
+		if (null != Game.instance.player) {
+			Game.instance.player.onMouseClick(e);
+		}
 	}
 
 	@Override
 	public void init(GLAutoDrawable drawable) {
-		
+
+	}
+
+	@Override
+	public void reshape(GLAutoDrawable drawable) {
+		Game.client.getScene().reshape(drawable);
 	}
 }

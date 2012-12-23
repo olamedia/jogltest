@@ -10,7 +10,7 @@ import ru.olamedia.olacraft.world.provider.WorldProvider;
 
 public class BlockSlice implements Iterator<Block> {
 	protected WorldProvider provider;
-	protected BlockLocation offset;
+	public BlockLocation offset;
 	protected int width;
 	protected int height;
 	protected int depth;
@@ -19,24 +19,30 @@ public class BlockSlice implements Iterator<Block> {
 	private int itY = 0;
 	private int itZ = 0;
 
+	private Block nearestPlaceholder = null;
+	Block nearestBlock = null;
+
 	public Block getNearest(MatrixCamera cam) {
+		nearestPlaceholder = null;
+		nearestBlock = null;
 		float notEmptyBlockDistance = Float.MAX_VALUE;
-		Block nearestBlock = null;
 		while (hasNext()) {
 			Block b = next();
 			try {
 				if (!b.isEmpty()) {
-					float d = b.getDistance(cam);
-					//System.out.print("d: " + d + " ");
-					if (d <= notEmptyBlockDistance) {
+					final float d = b.getDistance(cam);
+					if (d < notEmptyBlockDistance) {
 						notEmptyBlockDistance = d;
 						nearestBlock = b;
 					}
 				}
 			} catch (ChunkUnavailableException e) {
-				//e.printStackTrace();
 				b.request();
 			}
+		}
+		if (null != nearestBlock) {
+			nearestPlaceholder = new Block(provider, nearestBlock.location.x + nearestBlock.nearestX,
+					nearestBlock.location.y + +nearestBlock.nearestY, nearestBlock.location.z + +nearestBlock.nearestZ);
 		}
 		return nearestBlock;
 	}
@@ -201,5 +207,9 @@ public class BlockSlice implements Iterator<Block> {
 
 	public void setCenter(float x, float y, float z) {
 		setCenter((int) x, (int) y, (int) z);
+	}
+
+	public Block getNearestPutBlock() {
+		return nearestPlaceholder;
 	}
 }

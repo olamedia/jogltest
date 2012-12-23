@@ -4,8 +4,11 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Image;
 import java.awt.Toolkit;
+import java.awt.event.KeyListener;
+import java.awt.im.InputContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import javax.media.opengl.GLCapabilities;
 import javax.media.opengl.GLProfile;
@@ -16,6 +19,7 @@ import ru.olamedia.asset.AssetNotFoundException;
 import ru.olamedia.input.Keyboard;
 import ru.olamedia.input.MouseJail;
 import ru.olamedia.olacraft.OlaCraft;
+import ru.olamedia.olacraft.game.Game;
 
 import jogamp.newt.awt.NewtFactoryAWT;
 
@@ -26,7 +30,6 @@ import com.jogamp.newt.event.KeyAdapter;
 import com.jogamp.newt.event.KeyEvent;
 import com.jogamp.newt.opengl.GLWindow;
 import com.jogamp.opengl.util.Animator;
-import com.jogamp.opengl.util.FPSAnimator;
 
 public class GameFrame {
 	// java.awt.SystemTray
@@ -54,8 +57,9 @@ public class GameFrame {
 			// ES2
 			caps = new GLCapabilities(glProfile);
 			caps.setHardwareAccelerated(true);
-			caps.setDoubleBuffered(true);
-			caps.setBackgroundOpaque(false);
+			caps.setDoubleBuffered(true); // hardware swap
+			caps.setBackgroundOpaque(true);
+			caps.setSampleBuffers(false);
 
 			display = NewtFactoryAWT.createDisplay(null);
 			screen = NewtFactoryAWT.createScreen(display, screenId);
@@ -63,15 +67,17 @@ public class GameFrame {
 			// caps);
 			newtCanvasAWT = new NewtCanvasAWT(glWindow);
 			glWindow.setUndecorated(false);
+			glWindow.setAutoSwapBufferMode(false);
 			glWindow.setPointerVisible(true);
 			glWindow.confinePointer(false);
 			glWindow.addWindowListener(new QuitAdapter());
 			animator = new Animator(glWindow);
-			//animator = new FPSAnimator(glWindow, 60);
-			//animator.setRunAsFastAsPossible(true); // By default there is a
-													// brief
-													// pause in the animation
-													// loop
+			// animator.setUpdateFPSFrames(200, System.out);
+			// animator = new FPSAnimator(glWindow, 60);
+			animator.setRunAsFastAsPossible(true); // By default there is a
+			// brief
+			// pause in the animation
+			// loop
 			animator.start();
 			glWindow.addMouseListener(MouseJail.instance);
 			glWindow.addKeyListener(Keyboard.instance);
@@ -84,8 +90,14 @@ public class GameFrame {
 						glWindow.setPointerVisible(true);
 					}
 				}
+
+				@Override
+				public void keyPressed(KeyEvent e) {
+					super.keyPressed(e);
+					System.out.println(e.toString());
+				}
 			});
-			// animator.setUpdateFPSFrames(100, System.err);
+			//animator.setUpdateFPSFrames(1000, System.err);
 			jFrame.add(newtCanvasAWT);
 			glWindow.addGLEventListener(GameManager.instance);
 		}
@@ -121,6 +133,14 @@ public class GameFrame {
 		return glWindow.getWidth();
 	}
 
+	public static int getGLWidth() {
+		return Game.Display.getWidth();
+	}
+
+	public static int getGLHeight() {
+		return Game.Display.getHeight();
+	}
+
 	public static int getHeight() {
 		if (null == glWindow) {
 			return jFrame.getHeight();
@@ -130,6 +150,7 @@ public class GameFrame {
 
 	public GameFrame() {
 		instance = this;
+		// en.selectInputMethod(Locale.ENGLISH);
 		jFrame = new JFrame();
 		jFrame.setMinimumSize(new Dimension(200, 200));
 		jFrame.setSize(width, height);
@@ -139,6 +160,7 @@ public class GameFrame {
 		// glWindow.setLocation(100, 100);
 		jFrame.addWindowListener(new QuitAdapter());
 		jFrame.setVisible(true);
+
 	}
 
 	private void setIcons() {

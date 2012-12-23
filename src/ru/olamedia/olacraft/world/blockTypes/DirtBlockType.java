@@ -3,7 +3,11 @@ package ru.olamedia.olacraft.world.blockTypes;
 public class DirtBlockType extends AbstractBlockType {
 	@Override
 	public String getName() {
-		return "Gravel";
+		return "Dirt";
+	}
+
+	public boolean isLoose() {
+		return true;
 	}
 
 	@Override

@@ -1,6 +1,5 @@
 package ru.olamedia.olacraft.world.generator;
 
-import ru.olamedia.olacraft.world.chunk.Chunk;
 import ru.olamedia.olacraft.world.data.HeightMap;
 import ru.olamedia.olacraft.world.location.RegionLocation;
 import libnoiseforjava.NoiseGen.NoiseQuality;
@@ -58,7 +57,7 @@ public class HeightMapGenerator {
 			// MOUNTAINS
 			mountainsNoise = new RidgedMulti();
 			mountainsNoise.setFrequency(0.04);
-			mountainsNoise.setOctaveCount(6);
+			mountainsNoise.setOctaveCount(4);
 			turbulence = new Turbulence(mountainsNoise);
 			turbulence.setFrequency(0.2);
 			turbulence.setPower(1);
@@ -105,7 +104,7 @@ public class HeightMapGenerator {
 			// finalTerrain.setEdgeFalloff(1.25);
 
 			NoiseMap heightMap = new NoiseMap(16, 16);
-			builder.setSourceModule(maxTerrain);
+			builder.setSourceModule(blendedTerrain);
 			builder.setDestNoiseMap(heightMap);
 			double bx = chunkX;
 			double bz = chunkZ;
@@ -118,7 +117,7 @@ public class HeightMapGenerator {
 			for (int x = 0; x < 16; x++) {
 				for (int z = 0; z < 16; z++) {
 					// System.out.print(((float) heights[x][z]) + ";");
-					ints[x][z] = (int) (50 + minValue + (maxValue - minValue) * (heights[x][z] + 1) / 2);
+					ints[x][z] = (int) (minValue + (maxValue - minValue) * (heights[x][z] + 1) / 2);
 				}
 			}
 			// System.out.println("");
@@ -138,8 +137,6 @@ public class HeightMapGenerator {
 			builder.setSourceModule(finalTerrain);
 			builder.setDestNoiseMap(heightMap);
 			builder.setDestSize(256, 256);
-			float bx = location.getBlockLocation().x;
-			float bz = location.getBlockLocation().z;
 			float cx = location.getChunkLocation().x;
 			float cz = location.getChunkLocation().z;
 			builder.setBounds(cx, cx + 16, cz, cz + 16);

@@ -1,5 +1,7 @@
 package ru.olamedia.math;
 
+import com.jogamp.opengl.math.geom.AABBox;
+
 public class Frustum {
 	public Plane topPlane = new Plane();
 	public Plane bottomPlane = new Plane();
@@ -31,45 +33,48 @@ public class Frustum {
 		return v;
 	}
 
-	public int test(Box b) {
-		return quickClassify(b);
-		// int out, in = 0, result;
-		// result = Classifier.INSIDE;
-		// int pc = 5;
-		// for (int i = 0; i < 5; i++) {
-		// Plane plane = planes[i];
-		// out = 0;
-		// in = 0;
-		// for (int k = 0; k < 8 && (in == 0 || out == 0); k++) {
-		// if (plane.distance(b.getVertex(k)) > 0) {
-		// out++;
-		// } else {
-		// in++;
-		// }
-		// }
-		// if (out == 8) {
-		// System.out.println(i);
-		// return Classifier.OUTSIDE;
-		// }
-		// }
-		// if (in < pc) {
-		// result = Classifier.INTERSECT;
-		// }
-		// // for (int i = 0; i < 6; i++) {
-		// // for (int k = 0; k < 8 && (in == 0 || out == 0); k++) {
-		// // if (planes[i].distance(b.getVertex(k)) < 0) {
-		// // out++;
-		// // } else {
-		// // in++;
-		// // }
-		// // }
-		// // }
-		// // if (in < 1) {
-		// // return Classifier.OUTSIDE;
-		// // } else if (out > 0) {
-		// // result = Classifier.INTERSECT;
-		// // }
-		// return result;
+	private static final boolean quickClassify(Plane p, AABBox box) {
+		final float[] low = box.getLow();
+		final float[] high = box.getHigh();
+		if (p.distance(low[0], low[1], low[2]) > 0.0f)
+			return (true);
+		if (p.distance(high[0], low[1], low[2]) > 0.0f)
+			return (true);
+		if (p.distance(low[0], high[1], low[2]) > 0.0f)
+			return (true);
+		if (p.distance(high[0], high[1], low[2]) > 0.0f)
+			return (true);
+		if (p.distance(low[0], low[1], high[2]) > 0.0f)
+			return (true);
+		if (p.distance(high[0], low[1], high[2]) > 0.0f)
+			return (true);
+		if (p.distance(low[0], high[1], high[2]) > 0.0f)
+			return (true);
+		if (p.distance(high[0], high[1], high[2]) > 0.0f)
+			return (true);
+
+		return (false);
+	}
+
+	/**
+	 * Quick check to see if an orthogonal bounding box is inside the frustum
+	 */
+	public final boolean isOutside(AABBox box) {
+		if (!quickClassify(leftPlane, box))
+			return true;
+//		if (!quickClassify(rightPlane, box))
+//			return true;
+//		if (!quickClassify(topPlane, box))
+//			return true;
+//		if (!quickClassify(bottomPlane, box))
+//			return true;
+//		if (!quickClassify(nearPlane, box))
+//			return true;
+//		if (!quickClassify(farPlane, box))
+//			return true;
+
+		// We make no attempt to determine whether it's fully inside or not.
+		return false;
 	}
 
 	private static final boolean isPointInside(Plane plane, Vector3f p) {
@@ -80,31 +85,6 @@ public class Frustum {
 	private final boolean isPointInside(Vector3f p) {
 		return isPointInside(topPlane, p) && isPointInside(bottomPlane, p) && isPointInside(leftPlane, p)
 				&& isPointInside(rightPlane, p) && isPointInside(nearPlane, p);
-	}
-
-	/**
-	 * Quick check to see if an orthogonal bounding box is inside the frustum
-	 */
-	public final int quickClassify(Box box) {
-		// If all vertices is outside of at least one of planes
-		for (Plane p : planes) {
-			int in = 0;
-			@SuppressWarnings("unused")
-			int out = 0;
-			for (int i = 0; i < 8; i++) {
-				Vector3f v = box.getVertex(i);
-				if (p.distance(v) > 0.0f) {
-					out++;
-				} else {
-					in++;
-				}
-			}
-			if (in < 1) {
-				return (Classifier.OUTSIDE);
-			}
-		}
-
-		return (Classifier.INTERSECT);
 	}
 
 	/*

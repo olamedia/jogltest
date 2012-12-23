@@ -2,11 +2,25 @@ package ru.olamedia.olacraft.world.blockTypes;
 
 import com.jogamp.opengl.util.texture.Texture;
 
-import ru.olamedia.olacraft.world.block.BlockRegistry;
+import ru.olamedia.asset.SpriteRectangle;
+import ru.olamedia.olacraft.world.blockRenderer.AbstractBlockRenderer;
+import ru.olamedia.olacraft.world.blockRenderer.BoxRenderer;
+import ru.olamedia.olacraft.world.blockRenderer.RenderLocation;
+import ru.olamedia.olacraft.world.location.BlockLocation;
 import ru.olamedia.olacraft.world.provider.WorldProvider;
 import ru.olamedia.texture.TextureManager;
 
 public abstract class AbstractBlockType implements BlockType {
+
+	protected AbstractBlockRenderer renderer = new BoxRenderer();
+
+	public void dropBlock(WorldProvider provider, BlockLocation location){
+		provider.dropBlock(location, this);
+	}
+	
+	public AbstractBlockRenderer getRenderer() {
+		return this.renderer;
+	}
 
 	@Override
 	abstract public String getName();
@@ -14,6 +28,23 @@ public abstract class AbstractBlockType implements BlockType {
 	@Override
 	public int getMaxStack() {
 		return 64;
+	}
+
+	public boolean isOpaque() { // solid, non-transparent block
+		return true;
+	}
+
+	public boolean isLoose() {
+		return false;
+	}
+
+	@Override
+	public boolean hideTouchedSides() {
+		return isOpaque();
+	}
+
+	public boolean canMoveThrough() {
+		return false;
 	}
 
 	@Override
@@ -49,41 +80,88 @@ public abstract class AbstractBlockType implements BlockType {
 
 	@Override
 	public Texture getTopTexture() {
-		return TextureManager.get(this.getTopTextureFile());
+		return TextureManager.getSprite(this.getTopTextureFile());
+	}
+
+	@Override
+	public SpriteRectangle getTopTextureOffset() {
+		return TextureManager.getSpriteOffset(this.getTopTextureFile());
 	}
 
 	@Override
 	public Texture getBottomTexture() {
-		return TextureManager.get(this.getBottomTextureFile());
+		return TextureManager.getSprite(this.getBottomTextureFile());
+	}
+
+	@Override
+	public SpriteRectangle getBottomTextureOffset() {
+		return TextureManager.getSpriteOffset(this.getBottomTextureFile());
 	}
 
 	@Override
 	public Texture getLeftTexture() {
-		return TextureManager.get(this.getLeftTextureFile());
+		return TextureManager.getSprite(this.getLeftTextureFile());
+	}
+
+	@Override
+	public SpriteRectangle getLeftTextureOffset() {
+		return TextureManager.getSpriteOffset(this.getLeftTextureFile());
 	}
 
 	@Override
 	public Texture getRightTexture() {
-		return TextureManager.get(this.getRightTextureFile());
+		return TextureManager.getSprite(this.getRightTextureFile());
+	}
+
+	@Override
+	public SpriteRectangle getRightTextureOffset() {
+		return TextureManager.getSpriteOffset(this.getRightTextureFile());
 	}
 
 	@Override
 	public Texture getFrontTexture() {
-		return TextureManager.get(this.getFrontTextureFile());
+		return TextureManager.getSprite(this.getFrontTextureFile());
+	}
+
+	@Override
+	public SpriteRectangle getFrontTextureOffset() {
+		return TextureManager.getSpriteOffset(this.getFrontTextureFile());
 	}
 
 	@Override
 	public Texture getBackTexture() {
-		return TextureManager.get(this.getBackTextureFile());
+		return TextureManager.getSprite(this.getBackTextureFile());
 	}
-	
-	public void register(WorldProvider provider){
-		getBackTexture();
-		getBottomTexture();
-		getFrontTexture();
-		getLeftTexture();
-		getRightTexture();
-		getTopTexture();
-		provider.getTypeRegistry().registerBlockType(this);
+
+	@Override
+	public SpriteRectangle getBackTextureOffset() {
+		return TextureManager.getSpriteOffset(this.getBackTextureFile());
+	}
+
+	public void register(WorldProvider provider, boolean registerTextures) {
+		if (registerTextures) {
+			getBackTexture();
+			getBottomTexture();
+			getFrontTexture();
+			getLeftTexture();
+			getRightTexture();
+			getTopTexture();
+		} else {
+			provider.getTypeRegistry().registerBlockType(this);
+		}
+	}
+
+	public int getId(WorldProvider provider) {
+		return provider.getTypeRegistry().getBlockIdByClassName(this.getClass().getName());
+	}
+
+	@Override
+	public void render(RenderLocation location) {
+		this.renderer.render(this, location, true);
+	}
+
+	@Override
+	public boolean isTimeManaged() {
+		return false;
 	}
 }

@@ -9,6 +9,10 @@ package ru.olamedia.camera;
  * 
  */
 public interface Cameraman {
+	public MatrixCamera getCamera();
+
+	public void setCamera(MatrixCamera camera);
+
 	public float getCameraX();
 
 	public float getCameraY();

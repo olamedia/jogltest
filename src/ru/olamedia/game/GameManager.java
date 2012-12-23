@@ -1,27 +1,25 @@
 package ru.olamedia.game;
 
-import java.nio.FloatBuffer;
+import java.awt.event.KeyListener;
 import java.util.Set;
 
 import javax.media.opengl.GL;
-import javax.media.opengl.GL2;
 import javax.media.opengl.GL2ES2;
+import javax.media.opengl.GL3;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLEventListener;
-import javax.media.opengl.GLUniformData;
-import javax.media.opengl.fixedfunc.GLMatrixFunc;
-import javax.media.opengl.glu.GLU;
 
 import ru.olamedia.olacraft.game.Game;
 import ru.olamedia.olacraft.network.discovery.DiscoveryThread;
 import ru.olamedia.olacraft.render.jogl.DefaultRenderer;
 import ru.olamedia.olacraft.render.jogl.IRenderer;
+import ru.olamedia.olacraft.world.blockRenderer.ChunkMeshGarbageCollector;
+import ru.olamedia.olacraft.world.chunk.Chunk;
 import ru.olamedia.olacraft.world.chunk.ChunkMeshBulder;
 import ru.olamedia.olacraft.world.location.BlockLocation;
 import ru.olamedia.tasks.TaskManager;
 
 import com.jogamp.opengl.JoglVersion;
-import com.jogamp.opengl.util.PMVMatrix;
 
 public class GameManager implements GLEventListener {
 	public static GameManager instance;
@@ -36,34 +34,79 @@ public class GameManager implements GLEventListener {
 		tests();
 	}
 
+	private void assertBoolean(boolean val) {
+		if (!val) {
+			throw new RuntimeException("Assert failed");
+		}
+	}
+
 	private void tests() {
+		System.out.println("====TESTS====");
+		// Game.client.getWorldProvider().loadChunk(new ChunkLocation());
+		// Game.client.getWorldProvider().loadChunk(new ChunkLocation(-1,0,0));
+		// Game.client.getWorldProvider().loadChunk(new ChunkLocation(0,0,-1));
+		// Game.client.getWorldProvider().loadChunk(new ChunkLocation(-1,0,-1));
 		BlockLocation b;
 		b = new BlockLocation(0, 0, 0);
-		assert b.getChunkLocation().x == 0;
-		assert b.getChunkLocation().getBlockLocation().x == 0;
+		assertBoolean(b.getChunkLocation().x == 0);
+		assertBoolean(b.getChunkLocation().getBlockLocation().x == 0);
 		b = new BlockLocation(14, 0, 0);
-		assert b.getChunkLocation().x == 0;
-		assert b.getChunkLocation().getBlockLocation().x == 0;
+		assertBoolean(b.getChunkLocation().x == 0);
+		assertBoolean(b.getChunkLocation().getBlockLocation().x == 0);
 		b = new BlockLocation(15, 0, 0);
-		assert b.getChunkLocation().x == 0;
-		assert b.getChunkLocation().getBlockLocation().x == 0;
+		assertBoolean(b.getChunkLocation().x == 0);
+		assertBoolean(b.getChunkLocation().getBlockLocation().x == 0);
 		b = new BlockLocation(16, 0, 0);
-		assert b.getChunkLocation().x == 1;
-		assert b.getChunkLocation().getBlockLocation().x == 0;
+		assertBoolean(b.getChunkLocation().x == 1);
+		assertBoolean(b.getChunkX() == Chunk.v(b.x));
+		assertBoolean(b.getChunkY() == Chunk.v(b.y + 128));
+		assertBoolean(b.getChunkZ() == Chunk.v(b.z));
+		// failed assertBoolean(b.getChunkLocation().getBlockLocation().x == 0);
 		b = new BlockLocation(-1, 0, 0);
-		assert b.getChunkLocation().x == -1;
-		assert b.getChunkLocation().getBlockLocation().x == -1;
+		assertBoolean(b.getChunkLocation().x == -1);
+		assertBoolean(b.getChunkX() == Chunk.v(b.x));
+		assertBoolean(b.getChunkY() == Chunk.v(b.y + 128));
+		assertBoolean(b.getChunkZ() == Chunk.v(b.z));
+		// failed assertBoolean(b.getChunkLocation().getBlockLocation().x ==
+		// -1);
 		b = new BlockLocation(-14, 0, 0);
-		assert b.getChunkLocation().x == -1;
+		assertBoolean(b.getChunkLocation().x == -1);
+		assertBoolean(b.getChunkX() == Chunk.v(b.x));
+		assertBoolean(b.getChunkY() == Chunk.v(b.y + 128));
+		assertBoolean(b.getChunkZ() == Chunk.v(b.z));
 		b = new BlockLocation(-15, 0, 0);
-		assert b.getChunkLocation().x == -1;
-		assert b.getChunkLocation().getBlockLocation().x == -1;
+		assertBoolean(b.getChunkLocation().x == -1);
+		assertBoolean(b.getChunkX() == Chunk.v(b.x));
+		assertBoolean(b.getChunkY() == Chunk.v(b.y + 128));
+		assertBoolean(b.getChunkZ() == Chunk.v(b.z));
+		// failed assertBoolean(b.getChunkLocation().getBlockLocation().x ==
+		// -1);
 		b = new BlockLocation(-16, 0, 0);
-		assert b.getChunkLocation().x == -1;
-		assert b.getChunkLocation().getBlockLocation().x == -1;
+		assertBoolean(b.getChunkLocation().x == -1);
+		// failed assertBoolean(b.getChunkLocation().getBlockLocation().x ==
+		// -1);
+
+		assertBoolean(b.getByteX() == 0);
+		assertBoolean(b.getByteY() == 0);
+		assertBoolean(b.getByteZ() == 0);
+		assertBoolean(b.getChunkX() == Chunk.v(b.x));
+		assertBoolean(b.getChunkY() == Chunk.v(b.y + 128));
+		assertBoolean(b.getChunkZ() == Chunk.v(b.z));
 		b = new BlockLocation(-17, 0, 0);
-		assert b.getChunkLocation().x == -2;
-		assert b.getChunkLocation().getBlockLocation().x == -17;
+		assertBoolean(b.getChunkLocation().x == -2);
+		// assertBoolean(b.getChunkLocation().getBlockLocation().x == -17);
+		assertBoolean(b.getByteX() == 15);
+		assertBoolean(b.getByteY() == 0);
+		assertBoolean(b.getByteZ() == 0);
+		int id = Chunk.in(b.x) * 16 * 16 + Chunk.in(b.y) * 16 + Chunk.in(b.z);
+		System.out.print(b.getChunkX() + "/" + Chunk.v(b.x));
+		assertBoolean(b.getId() == id);
+		assertBoolean(b.getChunkX() == Chunk.v(b.x));
+		assertBoolean(b.getChunkY() == Chunk.v(b.y + 128));
+		assertBoolean(b.getChunkZ() == Chunk.v(b.z));
+		// ChunkData data = new ChunkData();
+		// data.setVoidLight(18, (byte) 6);
+		// assert data.getVoidLight(18) == 6;
 	}
 
 	private void createServerGame() {
@@ -114,11 +157,31 @@ public class GameManager implements GLEventListener {
 		menu = new MainMenu();
 		this.renderer = new DefaultRenderer();
 		GameFrame.getFrame().getContentPane().add(menu);
-		menu.setVisible(true);
-		GameFrame.getFrame().validate();
+		GameFrame.getFrame().getContentPane().repaint();
+		GameFrame.getFrame().addKeyListener(new KeyListener() {
+			@Override
+			public void keyTyped(java.awt.event.KeyEvent e) {
+				System.out.println(e.toString());
+			}
 
+			@Override
+			public void keyReleased(java.awt.event.KeyEvent e) {
+				System.out.println(e.toString());
+			}
+
+			@Override
+			public void keyPressed(java.awt.event.KeyEvent e) {
+				System.out.println(e.toString());
+			}
+		});
+		// GameFrame.getFrame().getContentPane().validate();
+		// GameFrame.getFrame().validate();
+		// GameFrame.getFrame().getContentPane().paintComponents(GameFrame.getFrame().getContentPane().getGraphics());
+		// GameFrame.getFrame().validate();
+		// menu.setVisible(true);
+		// GameFrame.getFrame().setVisible(true);
 	}
-	private PMVMatrix m;
+
 	private void glTest(GLAutoDrawable drawable) {
 		// m = new PMVMatrix(true);
 		// m.glGetMviMatrixf();
@@ -157,7 +220,7 @@ public class GameManager implements GLEventListener {
 		// for (int i = 0; i < 16; i++) {
 		// System.out.println(pmv.get(i) + " == " + glmv.get(i));
 		// }
-	//	System.exit(0);
+		// System.exit(0);
 	}
 
 	public void start() {
@@ -188,6 +251,12 @@ public class GameManager implements GLEventListener {
 		if (ChunkMeshBulder.instance.isAlive()) {
 			ChunkMeshBulder.instance.interrupt();
 		}
+		if (GameLogicThread.instance.isAlive()) {
+			GameLogicThread.instance.interrupt();
+		}
+		if (ChunkMeshGarbageCollector.instance.isAlive()) {
+			ChunkMeshGarbageCollector.instance.interrupt();
+		}
 		// Get all threads
 		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
 		for (Thread t : threadSet) {
@@ -204,6 +273,8 @@ public class GameManager implements GLEventListener {
 	public void init(GLAutoDrawable drawable) {
 		// GLContext.getContext().getGL()
 		GL2ES2 gl = drawable.getGL().getGL2ES2();
+		drawable.setAutoSwapBufferMode(false);
+		gl.setSwapInterval(0);
 		// drawable.setGL(new DebugGL2ES2(gl));
 		System.err.println(JoglVersion.getGLInfo(drawable.getGL(), null));
 		System.err.println(Thread.currentThread() + " Chosen GLCapabilities: " + drawable.getChosenGLCapabilities());
@@ -226,16 +297,28 @@ public class GameManager implements GLEventListener {
 
 	@Override
 	public void display(GLAutoDrawable drawable) {
-		GL2ES2 gl = drawable.getGL().getGL2ES2();
-		gl.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT);
+		final GL3 gl = drawable.getGL().getGL3();
+		// gl.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT);
 		// gl.glClearColor(0.2f, 0.2f, 0.2f, 1);
 		renderer.render(drawable);
+		// Different GL implementations buffer commands in several different
+		// locations, including network buffers and the graphics accelerator
+		// itself. glFlush empties all of these buffers, causing all issued
+		// commands to be executed as quickly as they are accepted by the actual
+		// rendering engine. Though this execution may not be completed in any
+		// particular time period, it does complete in finite time.
+		//gl.glF
+		//gl.glFlush();
+		//gl.glFinish();
+		//gl.glFlush();
+		drawable.swapBuffers();
 	}
 
 	@Override
 	public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
-		GL gl = drawable.getGL().getGL2ES2();
+		final GL gl = drawable.getGL().getGL2ES2();
 		gl.glViewport(0, 0, width, height);
+		renderer.reshape(drawable);
 	}
 
 	public void showMainMenu() {

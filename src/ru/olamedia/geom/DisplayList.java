@@ -2,7 +2,6 @@ package ru.olamedia.geom;
 
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
-import javax.media.opengl.GLAutoDrawable;
 
 public class DisplayList {
 	private GL2 gl;

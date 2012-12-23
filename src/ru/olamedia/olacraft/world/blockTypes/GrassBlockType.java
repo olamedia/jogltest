@@ -6,6 +6,10 @@ public class GrassBlockType extends AbstractBlockType {
 		return "Grass";
 	}
 
+	public boolean isLoose() {
+		return true;
+	}
+
 	@Override
 	public int getMaxStack() {
 		return 64;

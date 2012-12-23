@@ -6,6 +6,10 @@ public class GravelBlockType extends AbstractBlockType {
 		return "Gravel";
 	}
 
+	public boolean isLoose() {
+		return true;
+	}
+
 	@Override
 	public int getMaxStack() {
 		return 64;

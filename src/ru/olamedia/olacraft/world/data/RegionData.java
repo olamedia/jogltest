@@ -24,10 +24,18 @@ public class RegionData implements Serializable {
 	public HeightMap heightMap = new HeightMap(256, 256);
 	public SectorData[][] sectorData = new SectorData[16][16];
 
-	public RegionData(){
-		
+	public RegionData() {
+
 	}
-	
+
+	public void compress() {
+		for (int x = 0; x < 16; x++) {
+			for (int z = 0; z < 16; z++) {
+				sectorData[x][z].compress();
+			}
+		}
+	}
+
 	public void writeTo(OutputStream stream) throws IOException {
 		ObjectOutputStream out = new ObjectOutputStream(stream);
 		out.writeObject(this);
@@ -50,12 +58,20 @@ public class RegionData implements Serializable {
 	public ChunkData getChunkData(ChunkLocation chunkLocation) {
 		SectorData sector = getSectorData(chunkLocation.getSectorLocation());
 		int y = Chunk.in(chunkLocation.y + 128); // minHeight = -128
-		return sector.chunkData[y];
+		return sector.get(y);
 	}
 
 	public SectorData getSectorData(SectorLocation sectorLocation) {
 		int x = Chunk.in(sectorLocation.x);
 		int z = Chunk.in(sectorLocation.z);
 		return sectorData[x][z];
+	}
+
+	public void decompress() {
+		for (int x = 0; x < 16; x++) {
+			for (int z = 0; z < 16; z++) {
+				sectorData[x][z].decompress();
+			}
+		}
 	}
 }

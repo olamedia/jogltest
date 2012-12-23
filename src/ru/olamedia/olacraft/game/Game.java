@@ -1,14 +1,10 @@
 package ru.olamedia.olacraft.game;
 
-import com.jogamp.newt.opengl.GLWindow;
-
 import ru.olamedia.camera.MatrixCamera;
 import ru.olamedia.game.GameFrame;
 import ru.olamedia.olacraft.events.GameEvent;
 import ru.olamedia.olacraft.network.GameClient;
 import ru.olamedia.olacraft.network.GameServer;
-import ru.olamedia.olacraft.scene.GameScene;
-import ru.olamedia.olacraft.world.dataProvider.AbstractChunkDataProvider;
 import ru.olamedia.player.Player;
 
 public class Game {
@@ -17,7 +13,7 @@ public class Game {
 	public static boolean isServerRunning = false;
 	public static GameServer server = new GameServer();
 	public static GameClient client = new GameClient();
-	public static Timer timer = new Timer();
+	public static Timer fpsTimer = new Timer();
 
 	public MatrixCamera camera;
 
@@ -27,7 +23,6 @@ public class Game {
 	@SuppressWarnings("unused")
 	private int mode = 1;
 	private boolean isRunning = false;
-	@SuppressWarnings("unused")
 	// player
 	public Player player;
 
@@ -50,7 +45,7 @@ public class Game {
 		}
 		player = new Player();
 		camera = new MatrixCamera();
-		camera.attachTo(player);
+		camera.attachTo(player, true);
 		camera.setFov(90);
 		camera.pack();
 		// scene.registerLiveEntity(player);
@@ -81,7 +76,6 @@ public class Game {
 	}
 
 	public void tick() {
-		timer.update();
 
 	}
 
@@ -99,8 +93,8 @@ public class Game {
 		}
 	}
 
-	public float getDelta() {
-		return (float) timer.getElapsedTime() / 1000;
+	public float getFrameDelta() {
+		return (float) fpsTimer.getElapsedTime() / 1000f;
 	}
 
 }

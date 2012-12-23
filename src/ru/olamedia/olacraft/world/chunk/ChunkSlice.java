@@ -12,6 +12,8 @@ public class ChunkSlice {
 	private int height;
 	private int depth;
 
+	public static ChunkSlice rendererInstance;
+
 	public ChunkSlice(WorldProvider provider, int width, int height, int depth) {
 		this.provider = provider;
 		this.width = width;
@@ -20,8 +22,7 @@ public class ChunkSlice {
 		offset = new ChunkLocation();
 	}
 
-	protected HashMap<String, Chunk> chunks = new HashMap<String, Chunk>();
-	protected HashMap<Integer, HashMap<Integer, HashMap<Integer, Chunk>>> iChunks = new HashMap<Integer, HashMap<Integer, HashMap<Integer, Chunk>>>();
+	public HashMap<Integer, HashMap<Integer, HashMap<Integer, Chunk>>> iChunks = new HashMap<Integer, HashMap<Integer, HashMap<Integer, Chunk>>>();
 
 	public Chunk getChunk(ChunkLocation location) {
 		// int x = location.x;
@@ -43,8 +44,7 @@ public class ChunkSlice {
 			iChunks.get(location.x).put(location.y, new HashMap<Integer, Chunk>());
 		}
 
-		Chunk chunk = new Chunk(provider);
-		chunk.setLocation(location);
+		Chunk chunk = new Chunk(provider, location);
 		// chunks.put(key, chunk);
 		iChunks.get(location.x).get(location.y).put(location.z, chunk);
 		return chunk;
@@ -56,6 +56,16 @@ public class ChunkSlice {
 		// chunks.put(key, chunk);
 		// return chunk;
 		// }
+	}
+
+	public void removeChunk(ChunkLocation location) {
+		if (iChunks.containsKey(location.x)) {
+			if (iChunks.get(location.x).containsKey(location.y)) {
+				if (iChunks.get(location.x).get(location.y).containsKey(location.z)) {
+					iChunks.get(location.x).get(location.y).remove(location.z);
+				}
+			}
+		}
 	}
 
 	/**
@@ -133,4 +143,5 @@ public class ChunkSlice {
 	public void setLocation(ChunkLocation chunkOffset) {
 		offset = chunkOffset;
 	}
+
 }

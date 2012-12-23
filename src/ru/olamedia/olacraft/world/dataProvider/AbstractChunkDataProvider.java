@@ -1,5 +1,6 @@
 package ru.olamedia.olacraft.world.dataProvider;
 
+import ru.olamedia.olacraft.world.block.BlockRegistry;
 import ru.olamedia.olacraft.world.data.ChunkData;
 import ru.olamedia.olacraft.world.data.RegionData;
 import ru.olamedia.olacraft.world.data.SectorData;
@@ -8,6 +9,13 @@ import ru.olamedia.olacraft.world.location.RegionLocation;
 import ru.olamedia.olacraft.world.location.SectorLocation;
 
 abstract public class AbstractChunkDataProvider {
+
+	protected BlockRegistry types;
+
+	public void setTypeRegistry(BlockRegistry types) {
+		this.types = types;
+	}
+
 	/**
 	 * is data already available or we should wait
 	 * 
@@ -30,9 +38,9 @@ abstract public class AbstractChunkDataProvider {
 	 * @param RegionLocation
 	 */
 	public void loadChunk(ChunkLocation chunkLocation) {
-		//System.out.println("loadChunk(" + chunkLocation + ")");
+		// System.out.println("loadChunk(" + chunkLocation + ")");
 		this.loadRegion(chunkLocation.getRegionLocation());
-		//System.out.println("loadChunk(" + chunkLocation + ")--");
+		// System.out.println("loadChunk(" + chunkLocation + ")--");
 	}
 
 	public void loadSector(SectorLocation sectorLocation) {

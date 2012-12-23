@@ -1,0 +1,25 @@
+//precision lowp float;
+//precision lowp int;
+uniform mat4 pmvMatrix[4]; // P, Mv, Mvi and Mvit
+uniform vec4 sunColor;
+uniform sampler2D mesh_ActiveTexture;
+
+attribute vec4 mesh_vertices;
+attribute vec4 mesh_colors;
+
+attribute vec2 mesh_texCoord;
+
+invariant out vec4 position;
+vec4 color;
+smooth out vec2 texCoord;
+
+void main(void)
+{
+    // Transforming The Vertex Position To ModelView-Space
+    position  = pmvMatrix[1] * mesh_vertices; // vertex eye position
+    texCoord = mesh_texCoord;
+
+    gl_Position = pmvMatrix[0] * position;
+    
+    color = mesh_colors * sunColor;
+}

@@ -1,9 +1,5 @@
 package ru.olamedia.input;
 
-import java.awt.AWTException;
-import java.awt.Point;
-import java.awt.Robot;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,10 +11,22 @@ import ru.olamedia.game.GameFrame;
 public class MouseJail extends MouseAdapter {
 	public static MouseJail instance = new MouseJail();
 
+	public int x;
+	public int y;
+
 	public MouseJail() {
 	}
 
 	private static boolean isActive = false;
+	private static boolean isEnabled = true; // disabled if GUI is opened
+
+	public static void disable() {
+		isEnabled = false;
+	}
+
+	public static void enable() {
+		isEnabled = true;
+	}
 
 	/**
 	 * @return the isActive
@@ -32,22 +40,26 @@ public class MouseJail extends MouseAdapter {
 	 *            the isActive to set
 	 */
 	public static void setActive(boolean isActive) {
-		System.out.println("Mouse jail " + (isActive ? "active" : "not active"));
-		MouseJail.isActive = isActive;
-		GameFrame.confinePointer(isActive);
-		GameFrame.setPointerVisible(!isActive);
+		if (isEnabled) {
+			System.out.println("Mouse jail " + (isActive ? "active" : "not active"));
+			MouseJail.isActive = isActive;
+			GameFrame.confinePointer(isActive);
+			GameFrame.setPointerVisible(!isActive);
+		}
 	}
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
+		// if (isEnabled) {
 		if (e.isAltDown()) {
 			setActive(false);
 		} else {
 			setActive(true);
 		}
 		for (ru.olamedia.input.MouseListener l : listeners) {
-			l.onMouseClick();
+			l.onMouseClick(e);
 		}
+		// }
 	}
 
 	@Override
@@ -61,7 +73,7 @@ public class MouseJail extends MouseAdapter {
 		System.out.println("Exited");
 		isActive = false;
 		if (isActive) {
-			//moveToCenter();
+			// moveToCenter();
 		}
 	}
 
@@ -83,19 +95,17 @@ public class MouseJail extends MouseAdapter {
 	private float sensitivity = 2f;
 
 	private void onMove(MouseEvent e) {
+		x = e.getX();
+		y = e.getY();
 		if (isActive) {
-			int cx = GameFrame.getWidth() / 2;
-			int cy = GameFrame.getHeight() / 2;
-			float dx = e.getX() - cx;
-			float dy = e.getY() - cy;
-			dx *= sensitivity / 10;
-			dy *= sensitivity / 10;
+			final float dx = (e.getX() - GameFrame.getGLWidth() / 2) * sensitivity / 10;
+			final float dy = (e.getY() - GameFrame.getGLHeight() / 2) * sensitivity / 10;
 			// System.out.println("Mouse moved " + " dx:" + dx + " dy:" + dy
 			// + " x:" + e.getX() + " y:" + e.getY());
 			for (ru.olamedia.input.MouseListener l : listeners) {
 				l.onMouseMove(dx, dy);
 			}
-			GameFrame.getWindow().warpPointer(cx, cy);
+			GameFrame.getWindow().warpPointer(GameFrame.getGLWidth() / 2, GameFrame.getGLHeight() / 2);
 		}
 	}
 

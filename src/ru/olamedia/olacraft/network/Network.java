@@ -21,8 +21,11 @@ import ru.olamedia.olacraft.world.data.ChunkLightData;
 import ru.olamedia.olacraft.world.data.HeightMap;
 import ru.olamedia.olacraft.world.data.RegionData;
 import ru.olamedia.olacraft.world.data.SectorData;
+import ru.olamedia.olacraft.world.drop.DroppedEntity;
 import ru.olamedia.olacraft.world.location.BlockLocation;
 import ru.olamedia.olacraft.world.location.ChunkLocation;
+import ru.olamedia.olacraft.world.location.Location3f;
+import ru.olamedia.olacraft.world.location.Location3i;
 import ru.olamedia.olacraft.world.location.RegionLocation;
 import ru.olamedia.olacraft.world.location.SectorLocation;
 
@@ -53,10 +56,13 @@ public class Network {
 		kryo.register(HeightMap.class);
 		kryo.register(WorldInfo.class);
 		kryo.register(WorldInfoPacket.class);
+		kryo.register(Location3f.class);
+		kryo.register(Location3i.class);
 		kryo.register(BlockLocation.class);
 		kryo.register(ChunkLocation.class);
 		kryo.register(SectorLocation.class);
 		kryo.register(RegionLocation.class);
+		kryo.register(DroppedEntity.class);
 		kryo.register(ChunkData.class);
 		kryo.register(ChunkData[].class);
 		kryo.register(SectorData.class);

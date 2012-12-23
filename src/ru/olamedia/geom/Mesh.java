@@ -10,12 +10,52 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.GL2ES2;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLContext;
-import javax.media.opengl.fixedfunc.GLPointerFunc;
+import javax.media.opengl.GLException;
+import javax.media.opengl.GLUniformData;
+import javax.vecmath.Point3f;
+
+import ru.olamedia.asset.Shader;
+import ru.olamedia.olacraft.game.Game;
 
 import com.jogamp.opengl.util.GLArrayDataServer;
+import com.jogamp.opengl.util.PMVMatrix;
+import com.jogamp.opengl.util.glsl.ShaderState;
 import com.jogamp.opengl.util.texture.Texture;
 
 public class Mesh {
+	private static Shader shader = null;
+	private static GLUniformData pmvMatrixUniform;
+	private static GLUniformData sunColor;
+
+	private static Shader getShader() {
+		if (null == shader) {
+			shader = new Shader();
+			shader.compile();
+			GL2ES2 gl = GLContext.getCurrentGL().getGL2ES2();
+			ShaderState state = shader.getState();
+			PMVMatrix pmvMatrix = Game.client.getScene().getPmvMatrix();
+			state.attachObject("pmvMatrix", pmvMatrix);
+			pmvMatrixUniform = new GLUniformData("pmvMatrix", 4, 4, pmvMatrix.glGetPMvMatrixf());
+			state.ownUniform(pmvMatrixUniform);
+			state.uniform(gl, pmvMatrixUniform);
+
+			state.attachObject("sunColor", sunColor);
+			sunColor = new GLUniformData("sunColor", 4, Game.client.getScene().dayTime.sunColor);
+			state.ownUniform(sunColor);
+			state.uniform(gl, sunColor);
+
+			// if (!state.uniform(gl, new GLUniformData("sunColor", 4,
+			// Game.client.getScene().time.sunColor))) {
+			// throw new GLException("Error setting sunColor in shader: " +
+			// state);
+			// }
+			if (!state.uniform(gl, new GLUniformData("mesh_ActiveTexture", 0))) {
+				throw new GLException("Error setting mesh_ActiveTexture in shader: " + state);
+			}
+		}
+		return shader;
+	}
+
 	public void invalidate() {
 		buffer = null;
 		data = null;
@@ -103,11 +143,11 @@ public class Mesh {
 		}
 		for (Integer m : materials.keySet()) {
 			int matVertCount = materials.get(m);
-			final GLArrayDataServer interleaved = GLArrayDataServer.createFixedInterleaved(9, GL2.GL_FLOAT, false,
+			final GLArrayDataServer interleaved = GLArrayDataServer.createGLSLInterleaved(9, GL2.GL_FLOAT, false,
 					matVertCount, GL.GL_STATIC_DRAW);
-			interleaved.addFixedSubArray(GLPointerFunc.GL_VERTEX_ARRAY, 3, GL.GL_ARRAY_BUFFER);
-			interleaved.addFixedSubArray(GLPointerFunc.GL_COLOR_ARRAY, 4, GL.GL_ARRAY_BUFFER);
-			interleaved.addFixedSubArray(GLPointerFunc.GL_TEXTURE_COORD_ARRAY, 2, GL.GL_ARRAY_BUFFER);
+			interleaved.addGLSLSubArray("mesh_vertices", 3, GL.GL_ARRAY_BUFFER);
+			interleaved.addGLSLSubArray("mesh_colors", 4, GL.GL_ARRAY_BUFFER);
+			interleaved.addGLSLSubArray("mesh_texCoord", 2, GL.GL_ARRAY_BUFFER);
 			arrays.put(m, interleaved);
 		}
 		for (int n = 0; n < vertexCount; n++) {
@@ -141,6 +181,10 @@ public class Mesh {
 		xOffset = x;
 		yOffset = y;
 		zOffset = z;
+	}
+
+	public void setPoint3f(Point3f point) {
+		setPoint3f(point.x, point.y, point.z);
 	}
 
 	public void setPoint3f(float x, float y, float z) {
@@ -225,19 +269,24 @@ public class Mesh {
 			return;
 		}
 		GL glx = GLContext.getCurrentGL();
-		if (true){
-			GL2 gl = glx.getGL2();
-			gl.glShadeModel(GL2.GL_FLAT);
-		}
 		if (useVbo) {
 			GL2ES2 gl = glx.getGL2ES2();
 			// GL2 gl = glx.getGL2();
+			getShader().enable();
+			Game.client.getScene().dayTime.getClearColor();
+			getShader().getState().uniform(gl, pmvMatrixUniform);
+			getShader().getState().uniform(gl, sunColor);
 			for (Integer m : materials.keySet()) {
-				
-				gl.glEnable(GL.GL_TEXTURE_2D);
+				gl.glActiveTexture(GL.GL_TEXTURE0);
 				gl.glBindTexture(GL.GL_TEXTURE_2D, (int) m);
-				gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
-				gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST_MIPMAP_NEAREST);
+				// gl.glTexParameteri(GL.GL_TEXTURE_2D,
+				// GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
+				// gl.glTexParameteri(GL.GL_TEXTURE_2D,
+				// GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST_MIPMAP_NEAREST);
+				// gl.glTexParameteri(GL.GL_TEXTURE_2D,
+				// GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR);
+				// gl.glTexParameteri(GL.GL_TEXTURE_2D,
+				// GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR_MIPMAP_LINEAR);
 				arrays.get(m).enableBuffer(gl, true);
 				gl.glEnable(GL.GL_CULL_FACE);
 				gl.glEnable(GL.GL_DEPTH_TEST);
@@ -246,6 +295,7 @@ public class Mesh {
 				arrays.get(m).enableBuffer(gl, false);
 				// System.exit(0);
 			}
+			getShader().disable();
 		} else {
 			GL2 gl = glx.getGL2();
 			if (useDisplayList) {

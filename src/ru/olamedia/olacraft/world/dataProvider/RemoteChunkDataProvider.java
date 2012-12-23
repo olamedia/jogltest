@@ -17,7 +17,7 @@ import ru.olamedia.olacraft.world.location.RegionLocation;
 public class RemoteChunkDataProvider extends AbstractChunkDataProvider implements IPacketListener {
 
 	private GameClient client;
-	private HashMap<String, RegionData> map = new HashMap<String, RegionData>();
+	private HashMap<RegionLocation, RegionData> map = new HashMap<RegionLocation, RegionData>();
 	private List<String> loading = new ArrayList<String>();
 	private List<RegionLocation> queue = new ArrayList<RegionLocation>();
 
@@ -51,14 +51,13 @@ public class RemoteChunkDataProvider extends AbstractChunkDataProvider implement
 		if (loading.contains(key)) {
 			return false;
 		}
-		return map.containsKey(key);
+		return map.containsKey(regionLocation);
 	}
 
 	@Override
 	public RegionData getRegion(RegionLocation regionLocation) {
-		String key = regionLocation.toString();
-		RegionData data = map.get(key);
-		map.remove(key);
+		RegionData data = map.get(regionLocation);
+		map.remove(regionLocation);
 		return data;
 	}
 
@@ -67,10 +66,10 @@ public class RemoteChunkDataProvider extends AbstractChunkDataProvider implement
 		if (p instanceof RegionDataPacket) {
 			debug("received packet [conn " + connection.getID() + "]: RegionDataPacket");
 			RegionData data = ((RegionDataPacket) p).data;
-			System.out.println(data.sectorData[0][0].chunkData[15].isEmpty(0) + "");
-			String key = data.location.toString();
-			map.put(key, data);
-			loading.remove(key);
+			data.decompress();
+			//System.out.println(data.sectorData[0][0].get(15).isEmpty(0) + "");
+			map.put(data.location, data);
+			loading.remove(data.location);
 		}
 	}
 

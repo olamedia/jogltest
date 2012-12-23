@@ -1,5 +1,6 @@
 package ru.olamedia.game;
 
+import java.nio.FloatBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -8,6 +9,8 @@ import java.util.TimeZone;
 import ru.olamedia.astronomy.SunCalendar;
 
 public class GameTime {
+	public FloatBuffer sunColor = FloatBuffer.allocate(4);
+
 	public static class SunCalc {
 		private GameTime time;
 		private int r = 450;
@@ -94,63 +97,46 @@ public class GameTime {
 		return new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date((long) (gameTime * 1000)));
 	}
 
-	private static float addComponent(float a, float b) {
-		return a + b;
-	}
-
-	private static float mulComponent(float a, float b) {
-		return a * b;
-	}
+	private final float[] spaceColors = new float[] { 0.03f, 0.03f, 0.05f };
+	private final float[] sunSkyColors = new float[] { (float) 203 / 255, (float) 233 / 255, (float) 244 / 255 };
+	private final float[] sunRedColorsAdd = new float[] { 0.3f, 0.1f, 0.0f };
+	private final float sunAngularDiameter = 32;
+	private final float sunRenderDistance = 700;
+	private final float sunRenderDiameter = (float) ((float) 2 * sunRenderDistance * Math.tan(sunAngularDiameter / 2)) / 15f;
 
 	public float[] getClearColor() {
-		float sunAngularDiameter = 32;
-		float sunRenderDistance = 700;
-		@SuppressWarnings("unused")
-		float sunRenderDiameter = (float) ((float) 2 * sunRenderDistance * Math.tan(sunAngularDiameter / 2));
+		return clearColors;
+	}
 
-		sunRenderDiameter /= 15;
+	public float[] updateClearColor() {
 
-		float[] spaceColors = new float[] { 0.03f, 0.03f, 0.05f }; // a little
-																	// blue
+		// a little
+		// blue
 
-		clearColors = new float[] { 0.0f, 0.0f, 0.0f };
+		clearColors[0] = 0;
+		clearColors[1] = 0;
+		clearColors[2] = 0;
 
-		double crossAngle = sunCalendar.getHourAngle();
-		@SuppressWarnings("unused")
-		int elevationAngle = (int) sunCalendar.radToDeg(sunCalendar.getElevationAngle());
+		final double crossAngle = sunCalendar.getHourAngle();
 
-		sunlightFactor = 0f;
+		final float minSunlightFactor = 0.2097152f;
+		final float maxSunlightFactor = (1f - minSunlightFactor);
+		sunlightFactor = minSunlightFactor;
+
 		if ((crossAngle > -120 && crossAngle < -70) || (crossAngle > 70 && crossAngle < 120)) {
-			sunlightFactor = (float) 1f - (Math.abs(crossAngle) - 70) / 50;
+			sunlightFactor = minSunlightFactor + maxSunlightFactor * ((float) 1f - (Math.abs(crossAngle) - 70) / 50);
 		}
 		if (crossAngle >= -70 && crossAngle <= 70) {
 			sunlightFactor = (float) 1f;
 		}
-		int sunlight = (int) Math.round(15 * sunlightFactor);
-		if (sunlight != lastSunLight) {
-			spaceLightIsInvalid = true;
-			receivedLightIsInvalid = true;
-		}
-		//float[] sunSkyColors = new float[] { (float) 179 / 255, (float) 195 / 255, (float) 184 / 255 };
-		//float[] sunSkyColors = new float[] { (float) 209 / 255, (float) 227 / 255, (float) 251 / 255 };
-		float[] sunSkyColors = new float[] { (float) 203 / 255, (float) 233 / 255, (float) 244 / 255 };
+
 		for (int i = 0; i < 3; i++) {
-			clearColors[i] = addComponent(sunSkyColors[i] * (float) sunlightFactor, spaceColors[i]);
+			clearColors[i] = (float) (sunSkyColors[i] * sunlightFactor + spaceColors[i] * (1 - sunlightFactor));
 		}
-		float lightness = clearColors[0] + clearColors[1] + clearColors[2];
-		float[] sunRedColorsAdd = new float[] { 0.3f, 0.1f, 0.0f };
-		for (int i = 0; i < 3; i++) {
-			if (sunlightFactor < 0.5f && sunlightFactor > 0.0f) {
-				float redFactor = (float) (1 - Math.abs(1 - sunlightFactor * 4));
-				clearColors[i] = addComponent(clearColors[i], (float) sunRedColorsAdd[i] * redFactor);
-			}
-			clearColors[i] = mulComponent(clearColors[i], (float) sunlightFactor);
-		}
-		// fix lightness
-		float newLightness = clearColors[0] + clearColors[1] + clearColors[2];
-		for (int i = 0; i < 3; i++) {
-			clearColors[i] = clearColors[i] * lightness / newLightness;
-		}
+		sunColor.position(0);
+		sunColor.put(clearColors);
+		sunColor.put(3, 1f);
+		sunColor.position(0);
 		return clearColors;
 	}
 
@@ -166,6 +152,7 @@ public class GameTime {
 												// noon
 			sunEA = Math.floor(sunCalendar.getElevationAngle() * 1000) / 1000;
 			sunTC = Math.floor(sunCalendar.getTimeCorrectionFactor() * 1000) / 1000;
+			updateClearColor();
 		}
 	}
 

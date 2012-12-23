@@ -3,7 +3,7 @@ package ru.olamedia.olacraft.world.blockTypes;
 public class EmptyBlockType extends AbstractBlockType {
 	@Override
 	public String getName() {
-		return "";
+		return "Empty";
 	}
 
 	@Override
@@ -19,5 +19,9 @@ public class EmptyBlockType extends AbstractBlockType {
 	@Override
 	public String getTopTextureFile() {
 		return "texture/empty.png";
+	}
+	@Override
+	public boolean isOpaque() {
+		return false;
 	}
 }

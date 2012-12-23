@@ -1,6 +1,6 @@
 package ru.olamedia.olacraft;
 
 public class OlaCraft {
-	public static String version = "0.1.6";
+	public static String version = "0.1.7";
 
 }

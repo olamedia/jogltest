@@ -32,6 +32,20 @@ import com.esotericsoftware.kryonet.Server;
 public class GameServer {
 	private WorldProvider worldProvider;
 
+	/**
+	 * @return the worldProvider
+	 */
+	public WorldProvider getWorldProvider() {
+		return worldProvider;
+	}
+
+	/**
+	 * @param worldProvider the worldProvider to set
+	 */
+	public void setWorldProvider(WorldProvider worldProvider) {
+		this.worldProvider = worldProvider;
+	}
+
 	private ExecutorService threadPool = Executors.newFixedThreadPool(1);
 	public static Server server = new Server(30 * 1024 * 1024, 1024 * 1024) {
 		@Override
