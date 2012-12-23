@@ -345,7 +345,7 @@ public class GameScene implements KeyListener {
 		}
 		// bullets.render(drawable);
 		// gl.glPushAttrib(GL2.GL_ALL_ATTRIB_BITS);
-		player.render();
+		//player.render();
 		// gl.glPopAttrib();
 		// gl.glPopMatrix();
 
