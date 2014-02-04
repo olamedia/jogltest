@@ -53,7 +53,7 @@ public class GameFrame {
 
 	public void initGL() {
 		if (null == newtCanvasAWT) {
-			glProfile = GLProfile.get(GLProfile.GL2);// Default();
+			glProfile = GLProfile.get(GLProfile.GL2ES2);
 			// ES2
 			caps = new GLCapabilities(glProfile);
 			caps.setHardwareAccelerated(true);
